@@ -10,14 +10,26 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Eye, Trash } from 'lucide-react';
 
 interface TradeTableProps {
   trades: Trade[];
   onViewTrade?: (trade: Trade) => void;
+  showSelections?: boolean;
+  selectedTrades?: number[];
+  onSelectTrade?: (tradeId: number, selected: boolean) => void;
+  onDeleteSelected?: () => void;
 }
 
-const TradeTable: React.FC<TradeTableProps> = ({ trades, onViewTrade }) => {
+const TradeTable: React.FC<TradeTableProps> = ({
+  trades,
+  onViewTrade,
+  showSelections = false,
+  selectedTrades = [],
+  onSelectTrade,
+  onDeleteSelected
+}) => {
   if (!trades || trades.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -26,11 +38,47 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, onViewTrade }) => {
     );
   }
 
+  const areAllSelected = selectedTrades.length === trades.length && trades.length > 0;
+  
+  const handleSelectAll = (checked: boolean) => {
+    if (!onSelectTrade) return;
+    
+    trades.forEach(trade => {
+      onSelectTrade(trade.id, checked);
+    });
+  };
+
   return (
     <div className="overflow-x-auto">
+      {showSelections && selectedTrades.length > 0 && (
+        <div className="flex justify-between items-center p-2 mb-2 bg-gray-50 rounded">
+          <span className="text-sm font-medium text-gray-700">
+            {selectedTrades.length} {selectedTrades.length === 1 ? 'trade' : 'trades'} selected
+          </span>
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            onClick={onDeleteSelected}
+            className="flex items-center"
+          >
+            <Trash className="h-4 w-4 mr-1" />
+            Delete Selected
+          </Button>
+        </div>
+      )}
+      
       <Table>
         <TableHeader>
           <TableRow>
+            {showSelections && (
+              <TableHead className="w-12">
+                <Checkbox 
+                  checked={areAllSelected}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Select all trades"
+                />
+              </TableHead>
+            )}
             <TableHead className="whitespace-nowrap">Date</TableHead>
             <TableHead className="whitespace-nowrap">Symbol</TableHead>
             <TableHead className="whitespace-nowrap">Type</TableHead>
@@ -46,9 +94,19 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, onViewTrade }) => {
           {trades.map((trade) => {
             const isProfitable = parseFloat(trade.pnlDollars || '0') >= 0;
             const profitLossClass = isProfitable ? 'text-green-600' : 'text-red-600';
+            const isSelected = selectedTrades.includes(trade.id);
             
             return (
-              <TableRow key={trade.id}>
+              <TableRow key={trade.id} className={isSelected ? 'bg-blue-50' : undefined}>
+                {showSelections && (
+                  <TableCell className="py-2">
+                    <Checkbox 
+                      checked={isSelected}
+                      onCheckedChange={(checked) => onSelectTrade && onSelectTrade(trade.id, !!checked)}
+                      aria-label={`Select trade ${trade.id}`}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="whitespace-nowrap">
                   {format(new Date(trade.date), 'yyyy-MM-dd')}
                 </TableCell>
