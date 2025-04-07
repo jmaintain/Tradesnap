@@ -315,7 +315,12 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                                 {trade.screenshots.map((screenshot, index) => (
                                   <div key={index} className="border rounded-lg overflow-hidden">
                                     <img 
-                                      src={screenshot.startsWith('data:') ? screenshot : `/uploads/${screenshot}`} 
+                                      src={screenshot.startsWith('data:') 
+                                           ? screenshot 
+                                           : screenshot.startsWith('/uploads/') 
+                                             ? screenshot.substring(1) // Remove leading slash
+                                             : `/uploads/${screenshot}`
+                                      } 
                                       alt={`Trade screenshot ${index + 1}`}
                                       className="w-full h-auto object-contain"
                                     />
