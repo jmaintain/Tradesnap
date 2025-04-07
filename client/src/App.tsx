@@ -8,6 +8,7 @@ import Dashboard from "@/pages/Dashboard";
 import AllTrades from "@/pages/AllTrades";
 import Analytics from "@/pages/Analytics";
 import Settings from "@/pages/Settings";
+import Journal from "@/pages/Journal";
 import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -49,6 +50,9 @@ function Router() {
                 <a href="/trades" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
                   Trades
                 </a>
+                <a href="/journal" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
+                  Journal
+                </a>
                 <a href="/analytics" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
                   Analytics
                 </a>
@@ -89,6 +93,7 @@ function Router() {
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/trades" component={AllTrades} />
+            <Route path="/journal" component={Journal} />
             <Route path="/analytics" component={Analytics} />
             <Route path="/settings" component={Settings} />
             <Route component={NotFound} />
