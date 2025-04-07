@@ -3,7 +3,8 @@ import {
   instruments, type Instrument, type InsertInstrument,
   trades, type Trade, type InsertTrade,
   settings, type Settings, type InsertSettings,
-  journalEntries, type JournalEntry, type InsertJournalEntry
+  journalEntries, type JournalEntry, type InsertJournalEntry,
+  subscribers, type Subscriber, type InsertSubscriber
 } from "@shared/schema";
 
 export interface IStorage {
@@ -37,6 +38,12 @@ export interface IStorage {
   createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry>;
   updateJournalEntry(id: number, entry: Partial<InsertJournalEntry>): Promise<JournalEntry | undefined>;
   deleteJournalEntry(id: number): Promise<boolean>;
+
+  // Subscriber operations
+  getSubscribers(): Promise<Subscriber[]>;
+  getSubscriberByEmail(email: string): Promise<Subscriber | undefined>;
+  createSubscriber(subscriber: InsertSubscriber): Promise<Subscriber>;
+  updateSubscriber(id: number, subscriber: Partial<InsertSubscriber>): Promise<Subscriber | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -45,11 +52,13 @@ export class MemStorage implements IStorage {
   private trades: Map<number, Trade>;
   private settings: Map<number, Settings>;
   private journalEntries: Map<number, JournalEntry>;
+  private subscribers: Map<number, Subscriber>;
   private userId: number;
   private instrumentId: number;
   private tradeId: number;
   private settingId: number;
   private journalEntryId: number;
+  private subscriberId: number;
 
   constructor() {
     this.users = new Map();
@@ -57,11 +66,13 @@ export class MemStorage implements IStorage {
     this.trades = new Map();
     this.settings = new Map();
     this.journalEntries = new Map();
+    this.subscribers = new Map();
     this.userId = 1;
     this.instrumentId = 1;
     this.tradeId = 1;
     this.settingId = 1;
     this.journalEntryId = 1;
+    this.subscriberId = 1;
 
     // Initialize with default instruments
     this.initializeInstruments();
@@ -368,6 +379,51 @@ export class MemStorage implements IStorage {
 
   async deleteJournalEntry(id: number): Promise<boolean> {
     return this.journalEntries.delete(id);
+  }
+
+  // Subscriber operations
+  async getSubscribers(): Promise<Subscriber[]> {
+    return Array.from(this.subscribers.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getSubscriberByEmail(email: string): Promise<Subscriber | undefined> {
+    return Array.from(this.subscribers.values()).find(
+      (subscriber) => subscriber.email === email
+    );
+  }
+
+  async createSubscriber(insertSubscriber: InsertSubscriber): Promise<Subscriber> {
+    // Check if email already exists
+    const existingSubscriber = await this.getSubscriberByEmail(insertSubscriber.email);
+    if (existingSubscriber) {
+      // Return existing subscriber if email already registered
+      return existingSubscriber;
+    }
+
+    const id = this.subscriberId++;
+    const subscriber: Subscriber = { 
+      ...insertSubscriber, 
+      id,
+      status: insertSubscriber.status || 'pending', 
+      createdAt: new Date() 
+    };
+    
+    this.subscribers.set(id, subscriber);
+    return subscriber;
+  }
+
+  async updateSubscriber(id: number, updateData: Partial<InsertSubscriber>): Promise<Subscriber | undefined> {
+    const subscriber = this.subscribers.get(id);
+    if (!subscriber) return undefined;
+
+    const updatedSubscriber: Subscriber = {
+      ...subscriber,
+      ...updateData,
+    };
+
+    this.subscribers.set(id, updatedSubscriber);
+    return updatedSubscriber;
   }
 }
 

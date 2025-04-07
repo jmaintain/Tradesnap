@@ -8,7 +8,8 @@ import {
   insertTradeSchema, 
   insertInstrumentSchema, 
   insertSettingsSchema,
-  insertJournalEntrySchema
+  insertJournalEntrySchema,
+  insertSubscriberSchema
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -448,6 +449,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const success = await storage.deleteJournalEntry(id);
       res.status(204).end();
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  // Subscriber endpoints
+  app.get("/api/subscribers", async (req: Request, res: Response) => {
+    try {
+      const subscribers = await storage.getSubscribers();
+      res.json(subscribers);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.post("/api/subscribe", async (req: Request, res: Response) => {
+    try {
+      const parsedData = insertSubscriberSchema.parse(req.body);
+      const subscriber = await storage.createSubscriber(parsedData);
+      res.status(201).json(subscriber);
     } catch (err) {
       handleError(err, res);
     }
