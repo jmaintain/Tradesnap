@@ -20,11 +20,14 @@ import PerformanceCard from '@/components/ui/performance-card';
 import TradeTable from '@/components/ui/trade-table';
 import InstrumentTable from '@/components/ui/instrument-table';
 import NewTradeModal from '@/components/NewTradeModal';
+import TradeViewModal from '@/components/TradeViewModal';
 import { Trade } from '@shared/schema';
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
   const [isNewTradeModalOpen, setIsNewTradeModalOpen] = useState(false);
+  const [isViewTradeModalOpen, setIsViewTradeModalOpen] = useState(false);
+  const [selectedTrade, setSelectedTrade] = useState<Trade | undefined>(undefined);
   
   // Fetch trades
   const { data: trades = [], isLoading: isLoadingTrades } = useQuery<Trade[]>({
@@ -73,11 +76,8 @@ const Dashboard: React.FC = () => {
   const recentTrades = [...trades].slice(0, 5);
 
   const handleViewTrade = (trade: Trade) => {
-    // In a more complex app, this would navigate to a trade detail page
-    toast({
-      title: `Viewing ${trade.symbol} trade`,
-      description: `Executed on ${new Date(trade.date).toLocaleDateString()}`
-    });
+    setSelectedTrade(trade);
+    setIsViewTradeModalOpen(true);
   };
 
   return (
@@ -175,6 +175,13 @@ const Dashboard: React.FC = () => {
       <NewTradeModal 
         isOpen={isNewTradeModalOpen} 
         onClose={() => setIsNewTradeModalOpen(false)} 
+      />
+      
+      <TradeViewModal
+        isOpen={isViewTradeModalOpen}
+        onClose={() => setIsViewTradeModalOpen(false)}
+        trade={selectedTrade}
+        allTrades={trades}
       />
     </div>
   );
