@@ -50,7 +50,15 @@ const JournalPage = () => {
   // Query for journal entries on selected date
   const { data: journalEntries = [] } = useQuery({
     queryKey: ['/api/journal/date', formattedDate],
-    queryFn: getQueryFn<JournalEntry[]>({ on401: 'returnNull' }),
+    queryFn: async () => {
+      try {
+        return await apiRequestAdapter<JournalEntry[]>(`/api/journal/date/${formattedDate}`);
+      } catch (error) {
+        console.error("Error fetching journal entries:", error);
+        return [];
+      }
+    },
+    enabled: !!formattedDate,
   });
 
   // Query for trades on selected date
@@ -161,11 +169,9 @@ const JournalPage = () => {
       // Format date to check for journal entries and trades
       const dayFormatted = format(day, 'yyyy-MM-dd');
       
-      // Check if there are journal entries for this day
-      const hasJournalEntries = allTrades.some(trade => {
-        const tradeDate = new Date(trade.date);
-        return format(tradeDate, 'yyyy-MM-dd') === dayFormatted;
-      });
+      // Placeholder for when we can check for journal entries
+      // This would need to be implemented with a separate query that gets all journal entries
+      const hasJournalEntries = false;
 
       // Check if there are trades for this day
       const hasTrades = allTrades.some(trade => {

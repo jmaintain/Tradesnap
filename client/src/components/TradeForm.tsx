@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { insertTradeSchema } from '@shared/schema';
+import { insertTradeSchema, insertJournalEntrySchema } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { processImageFile } from '@/lib/imageCompression';
+import { apiRequestAdapter } from '@/lib/apiAdapter';
 
 import {
   Form,
@@ -26,9 +27,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { UploadCloud } from 'lucide-react';
+import { UploadCloud, BookOpen } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 // Extend the trade schema for the form with required fields validation
 const tradeFormSchema = insertTradeSchema.extend({
@@ -55,6 +64,9 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
   const queryClient = useQueryClient();
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [journalContent, setJournalContent] = useState<string>('');
+  const [journalMood, setJournalMood] = useState<string>('neutral');
+  const [includeJournal, setIncludeJournal] = useState<boolean>(false);
 
   // Fetch instruments for the dropdown
   const { data: instruments = [] } = useQuery({
@@ -159,10 +171,44 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
         throw new Error(errorData.message || 'Failed to save trade');
       }
       
-      toast({
-        title: "Trade saved",
-        description: "Your trade has been successfully recorded",
-      });
+      // Create journal entry if include journal is checked
+      if (includeJournal && journalContent.trim()) {
+        try {
+          const formattedDate = format(data.date, 'yyyy-MM-dd');
+          await apiRequestAdapter('/api/journal', {
+            method: 'POST',
+            body: JSON.stringify({
+              content: journalContent,
+              date: formattedDate,
+              mood: journalMood
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          // Invalidate journal queries
+          queryClient.invalidateQueries({ queryKey: ['/api/journal'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/journal/date', formattedDate] });
+          
+          toast({
+            title: "Trade and Journal Created",
+            description: "Your trade and journal entry have been successfully recorded.",
+          });
+        } catch (error) {
+          console.error('Error creating journal entry:', error);
+          toast({
+            variant: "warning",
+            title: "Trade Created, Journal Failed",
+            description: "Your trade was saved but the journal entry could not be created.",
+          });
+        }
+      } else {
+        toast({
+          title: "Trade saved",
+          description: "Your trade has been successfully recorded",
+        });
+      }
       
       // Invalidate trades query to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
@@ -405,8 +451,71 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
             </div>
           </div>
         </div>
+
+        <Accordion type="single" collapsible className="mt-4">
+          <AccordionItem value="journal">
+            <AccordionTrigger>
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                <span>Add Journal Entry</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="include-journal" 
+                    checked={includeJournal}
+                    onCheckedChange={() => setIncludeJournal(!includeJournal)}
+                  />
+                  <label
+                    htmlFor="include-journal"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Include journal entry with this trade
+                  </label>
+                </div>
+                
+                {includeJournal && (
+                  <>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="mood" className="text-right">
+                        Mood
+                      </Label>
+                      <Select value={journalMood} onValueChange={setJournalMood}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select your mood" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="great">Great</SelectItem>
+                          <SelectItem value="good">Good</SelectItem>
+                          <SelectItem value="neutral">Neutral</SelectItem>
+                          <SelectItem value="bad">Bad</SelectItem>
+                          <SelectItem value="terrible">Terrible</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-start gap-4">
+                      <Label htmlFor="journal-content" className="text-right pt-2">
+                        Journal
+                      </Label>
+                      <Textarea
+                        id="journal-content"
+                        value={journalContent}
+                        onChange={(e) => setJournalContent(e.target.value)}
+                        className="col-span-3"
+                        rows={6}
+                        placeholder="Write your journal entry here..."
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
         
-        <div className="pt-3 border-t border-gray-200">
+        <div className="pt-3 border-t border-gray-200 mt-4">
           <div className="flex justify-end">
             <Button
               type="button"
