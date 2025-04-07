@@ -373,8 +373,9 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
       {/* Fullscreen image viewer */}
       {enlargedImage && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
           onClick={handleCloseEnlargedImage}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
         >
           <div className="relative max-h-[90vh] max-w-[90vw] overflow-auto" onClick={(e) => e.stopPropagation()}>
             <Button 
