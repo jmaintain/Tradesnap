@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { processImageFile } from '@/lib/imageCompression';
 import { apiRequestAdapter } from '@/lib/apiAdapter';
+import { useStorage } from '@/lib/indexedDB/StorageContext';
 
 import {
   Form,
@@ -62,6 +63,7 @@ interface TradeFormProps {
 const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { refreshStorageInfo } = useStorage();
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [journalContent, setJournalContent] = useState<string>('');
@@ -219,6 +221,9 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
       
       // Invalidate trades query to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
+      
+      // Refresh storage info to update usage indicators
+      await refreshStorageInfo();
       
       if (onSubmitSuccess) {
         onSubmitSuccess();

@@ -12,6 +12,7 @@ import Journal from "@/pages/Journal";
 import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { StorageProvider } from "@/lib/indexedDB/StorageContext";
 
 function Router() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -122,8 +123,10 @@ const User = ({ className }: { className?: string }) => (
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <StorageProvider>
+        <Router />
+        <Toaster />
+      </StorageProvider>
     </QueryClientProvider>
   );
 }

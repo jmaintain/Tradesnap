@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { processImageFile } from '@/lib/imageCompression';
+import { useStorage } from '@/lib/indexedDB/StorageContext';
 
 import {
   Form,
@@ -58,6 +59,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { refreshStorageInfo } = useStorage();
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingScreenshots, setExistingScreenshots] = useState<string[]>(
@@ -198,6 +200,9 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       
       // Invalidate trades query to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
+      
+      // Refresh storage info to update usage indicators
+      await refreshStorageInfo();
       
       if (onSubmitSuccess) {
         onSubmitSuccess();
