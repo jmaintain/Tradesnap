@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/Sidebar";
 import Dashboard from "@/pages/Dashboard";
 import AllTrades from "@/pages/AllTrades";
+import Analytics from "@/pages/Analytics";
 import Settings from "@/pages/Settings";
 import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -88,6 +89,7 @@ function Router() {
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/trades" component={AllTrades} />
+            <Route path="/analytics" component={Analytics} />
             <Route path="/settings" component={Settings} />
             <Route component={NotFound} />
           </Switch>

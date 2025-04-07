@@ -92,6 +92,42 @@ export class MemStorage implements IStorage {
         tickValue: "5.00",
         pointValue: "5.00",
       },
+      // Micro instruments
+      {
+        symbol: "MES",
+        description: "Micro E-mini S&P 500",
+        tickSize: "0.25",
+        tickValue: "1.25",
+        pointValue: "5.00",
+      },
+      {
+        symbol: "MNQ",
+        description: "Micro E-mini NASDAQ-100",
+        tickSize: "0.25",
+        tickValue: "0.50",
+        pointValue: "2.00",
+      },
+      {
+        symbol: "MCL",
+        description: "Micro WTI Crude Oil",
+        tickSize: "0.01",
+        tickValue: "0.10",
+        pointValue: "10.00",
+      },
+      {
+        symbol: "MGC",
+        description: "Micro Gold",
+        tickSize: "0.10",
+        tickValue: "1.00", 
+        pointValue: "10.00",
+      },
+      {
+        symbol: "MYM",
+        description: "Micro E-mini Dow Jones",
+        tickSize: "1.00",
+        tickValue: "0.50",
+        pointValue: "0.50",
+      },
     ];
 
     defaultInstruments.forEach(instrument => {
