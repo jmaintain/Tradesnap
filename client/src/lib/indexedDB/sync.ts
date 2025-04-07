@@ -24,9 +24,13 @@ import {
  */
 export const syncTradesToIndexedDB = async (): Promise<void> => {
   try {
-    // Fetch trades from server
-    const fetchTrades = getQueryFn({ on401: 'returnNull' });
-    const serverTrades = await fetchTrades('/api/trades') as Trade[];
+    // Fetch trades from server directly with fetch API
+    const response = await fetch('/api/trades');
+    if (!response.ok) {
+      console.error(`Failed to fetch trades: ${response.status} ${response.statusText}`);
+      return;
+    }
+    const serverTrades = await response.json() as Trade[];
     
     if (!serverTrades || !Array.isArray(serverTrades)) {
       console.warn('No trades fetched from server for sync');
@@ -83,9 +87,13 @@ export const syncTradesToIndexedDB = async (): Promise<void> => {
  */
 export const syncInstrumentsToIndexedDB = async (): Promise<void> => {
   try {
-    // Fetch instruments from server
-    const fetchInstruments = getQueryFn({ on401: 'returnNull' });
-    const serverInstruments = await fetchInstruments('/api/instruments') as Instrument[];
+    // Fetch instruments from server directly with fetch API instead of getQueryFn
+    const response = await fetch('/api/instruments');
+    if (!response.ok) {
+      console.error(`Failed to fetch instruments: ${response.status} ${response.statusText}`);
+      return;
+    }
+    const serverInstruments = await response.json() as Instrument[];
     
     if (!serverInstruments || !Array.isArray(serverInstruments)) {
       console.warn('No instruments fetched from server for sync');
@@ -143,12 +151,18 @@ export const syncNewTradeToServer = async (tradeId: number): Promise<Trade> => {
       throw new Error(`Trade with ID ${tradeId} not found in IndexedDB`);
     }
     
-    // Send the trade to the server
-    const serverTrade = await apiRequest('/api/trades', {
+    // Send the trade to the server using fetch directly
+    const response = await fetch('/api/trades', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(trade),
     });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to sync trade to server: ${response.status} ${response.statusText}`);
+    }
+    
+    const serverTrade = await response.json() as Trade;
     
     // Update the local trade with the server ID and data
     await updateTrade(tradeId, serverTrade);
@@ -178,12 +192,18 @@ export const syncUpdatedTradeToServer = async (tradeId: number): Promise<Trade> 
       throw new Error(`Trade with ID ${tradeId} not found in IndexedDB`);
     }
     
-    // Send the updated trade to the server
-    const serverTrade = await apiRequest(`/api/trades/${tradeId}`, {
+    // Send the updated trade to the server using fetch directly
+    const response = await fetch(`/api/trades/${tradeId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(trade),
     });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to update trade on server: ${response.status} ${response.statusText}`);
+    }
+    
+    const serverTrade = await response.json() as Trade;
     
     // Update the local trade with the server data
     await updateTrade(tradeId, serverTrade);
@@ -206,10 +226,14 @@ export const syncUpdatedTradeToServer = async (tradeId: number): Promise<Trade> 
  */
 export const syncDeletedTradeToServer = async (tradeId: number): Promise<void> => {
   try {
-    // Delete the trade on the server
-    await apiRequest(`/api/trades/${tradeId}`, {
+    // Delete the trade on the server using fetch directly
+    const response = await fetch(`/api/trades/${tradeId}`, {
       method: 'DELETE',
     });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete trade on server: ${response.status} ${response.statusText}`);
+    }
     
     // Invalidate the trades query to refresh the UI
     queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
