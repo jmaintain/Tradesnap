@@ -112,7 +112,10 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
       // Add all form fields to FormData
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'date') {
-          formData.append(key, format(value, 'yyyy-MM-dd'));
+          // Make sure we're using the date directly without any timezone adjustments
+          // This ensures the exact date selected by the user is used
+          const selectedDate = value as Date;
+          formData.append(key, selectedDate.toISOString());
         } else if (value !== undefined && value !== null) {
           formData.append(key, value.toString());
         }
@@ -174,12 +177,13 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
       // Create journal entry if include journal is checked
       if (includeJournal && journalContent.trim()) {
         try {
-          const formattedDate = format(data.date, 'yyyy-MM-dd');
+          // Use the same date format as the trade
+          const selectedDate = data.date as Date;
           await apiRequestAdapter('/api/journal', {
             method: 'POST',
             body: JSON.stringify({
               content: journalContent,
-              date: formattedDate,
+              date: selectedDate.toISOString(),
               mood: journalMood
             }),
             headers: {
@@ -189,7 +193,10 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
           
           // Invalidate journal queries
           queryClient.invalidateQueries({ queryKey: ['/api/journal'] });
-          queryClient.invalidateQueries({ queryKey: ['/api/journal/date', formattedDate] });
+          
+          // Format date for the journal date query cache invalidation
+          const dateForQuery = format(data.date, 'yyyy-MM-dd');
+          queryClient.invalidateQueries({ queryKey: ['/api/journal/date', dateForQuery] });
           
           toast({
             title: "Trade and Journal Created",
@@ -198,7 +205,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
         } catch (error) {
           console.error('Error creating journal entry:', error);
           toast({
-            variant: "warning",
+            variant: "destructive",
             title: "Trade Created, Journal Failed",
             description: "Your trade was saved but the journal entry could not be created.",
           });
