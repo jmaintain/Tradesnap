@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, HardDrive, Trash2, Image, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Database, HardDrive, Trash2, Image, AlertTriangle, RefreshCw, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -16,6 +16,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface StorageManagementProps {
   monthsToRetain?: number;
@@ -89,7 +95,24 @@ export function StorageManagement({ monthsToRetain = 1 }: StorageManagementProps
         {/* Storage Usage Section */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium">Storage Usage</h3>
+            <div className="flex items-center">
+              <h3 className="text-sm font-medium">Storage Usage</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-1">
+                      <span className="sr-only">Storage information</span>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-sm">
+                    <p>Trade data and screenshots are stored in your browser&apos;s IndexedDB storage.</p>
+                    <p className="mt-1">Location: Your browser&apos;s local storage on this device.</p>
+                    <p className="mt-1">Typical limits are ~50MB to 500MB depending on your browser and device.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <span className="text-sm text-muted-foreground">
               {isLoading ? 'Calculating...' : 
                 storageInfo ? `${storageInfo.formattedUsed} / ${storageInfo.formattedQuota}` : 'Unknown'}
@@ -206,9 +229,18 @@ export function StorageManagement({ monthsToRetain = 1 }: StorageManagementProps
       </CardContent>
       
       <CardFooter className="bg-gray-50 dark:bg-gray-800 text-xs text-muted-foreground">
-        <p>
-          StorageMonitor v1.0 - Local browser storage only. Data is stored in your browser using IndexedDB.
-        </p>
+        <div className="flex items-start space-x-2">
+          <Database className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="mb-1">
+              <strong>Browser Storage:</strong> Your trade data and screenshots are stored directly in your browser using IndexedDB. 
+            </p>
+            <p>
+              This data is private to this device. If you clear your browser data or switch browsers/devices, 
+              you will need to re-enter your trades. Data is not stored on any server.
+            </p>
+          </div>
+        </div>
       </CardFooter>
     </Card>
   );

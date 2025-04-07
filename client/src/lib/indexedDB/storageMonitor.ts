@@ -9,6 +9,9 @@ const DEFAULT_CRITICAL_THRESHOLD = 0.9; // 90% of quota
 const MB = 1024 * 1024; // 1 MB in bytes
 const DEFAULT_QUOTA = 50 * MB; // Default assumption of 50MB limit
 
+// Maximum reasonable quota - many browsers report much more space than is reliably available
+const MAX_REASONABLE_QUOTA = 500 * MB; // Cap at 500MB to be realistic
+
 export interface StorageInfo {
   used: number;
   quota: number;
@@ -42,7 +45,9 @@ export async function checkStorageUsage(dbName: string): Promise<StorageInfo | n
       const estimation = await navigator.storage.estimate();
       
       const used = estimation.usage || 0;
-      const quota = estimation.quota || DEFAULT_QUOTA;
+      // Cap the quota to a reasonable amount - browsers often report much more than is reliably available
+      const reportedQuota = estimation.quota || DEFAULT_QUOTA;
+      const quota = Math.min(reportedQuota, MAX_REASONABLE_QUOTA);
       const percentUsed = used / quota;
       
       return {
