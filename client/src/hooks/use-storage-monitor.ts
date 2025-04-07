@@ -36,6 +36,7 @@ export function useStorageMonitor(
 
   // Function to refresh storage information
   const refreshInfo = useCallback(async () => {
+    console.log("useStorageMonitor: Starting refresh");
     if (!isIndexedDBSupported()) {
       toast({
         title: "Browser Storage Not Supported",
@@ -43,6 +44,7 @@ export function useStorageMonitor(
         variant: "destructive"
       });
       setIsLoading(false);
+      console.log("useStorageMonitor: IndexedDB not supported");
       return;
     }
 
@@ -50,12 +52,15 @@ export function useStorageMonitor(
     
     try {
       // Get storage usage information
+      console.log("useStorageMonitor: Checking storage usage");
       const info = await checkStorageUsage(DB_NAME);
+      console.log("useStorageMonitor: Storage info retrieved", info);
       setStorageInfo(info);
       
       // Get old trade records
       const oldIds = await getOldTradeRecords(DB_NAME, monthsToRetain);
       setOldTradeIds(oldIds);
+      console.log(`useStorageMonitor: Found ${oldIds.length} old trade records`);
       
       // Show warning if approaching storage limit
       if (info?.isApproachingLimit && oldIds.length > 0) {
@@ -74,6 +79,7 @@ export function useStorageMonitor(
       });
     } finally {
       setIsLoading(false);
+      console.log("useStorageMonitor: Refresh completed");
     }
   }, [monthsToRetain, toast]);
 

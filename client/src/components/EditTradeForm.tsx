@@ -202,7 +202,9 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
       
       // Refresh storage info to update usage indicators
+      console.log("Refreshing storage info after trade update");
       await refreshStorageInfo();
+      console.log("Storage info refresh completed after update");
       
       if (onSubmitSuccess) {
         onSubmitSuccess();

@@ -29,16 +29,19 @@ interface StorageProviderProps {
 
 // Provider component
 export const StorageProvider: React.FC<StorageProviderProps> = ({ children }) => {
-  // Use the storage monitor hook
+  // Use the storage monitor hook with auto-refresh of 30 seconds
   const { 
     refreshInfo,
     storageInfo,
     isLoading 
-  } = useStorageMonitor(1, 0); // 1 month retention, no auto-refresh
+  } = useStorageMonitor(1, 30000); // 1 month retention, 30 second auto-refresh
 
   // Expose a simpler refreshStorageInfo function
   const refreshStorageInfo = useCallback(async () => {
+    console.log("StorageContext: Starting storage refresh");
     await refreshInfo();
+    // Don't reference storageInfo in the dependency array to avoid circular dependency
+    console.log("StorageContext: Storage refresh completed");
   }, [refreshInfo]);
 
   return (

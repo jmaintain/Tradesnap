@@ -223,7 +223,9 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
       
       // Refresh storage info to update usage indicators
+      console.log("Refreshing storage info after trade creation");
       await refreshStorageInfo();
+      console.log("Storage info refresh completed");
       
       if (onSubmitSuccess) {
         onSubmitSuccess();

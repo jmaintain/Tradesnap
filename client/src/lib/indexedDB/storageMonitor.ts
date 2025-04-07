@@ -42,7 +42,9 @@ export async function checkStorageUsage(dbName: string): Promise<StorageInfo | n
   try {
     // Check if browser supports the Storage API
     if (navigator.storage && navigator.storage.estimate) {
+      console.log("checkStorageUsage: Using Storage API");
       const estimation = await navigator.storage.estimate();
+      console.log("checkStorageUsage: Raw storage estimate:", estimation);
       
       const used = estimation.usage || 0;
       // Cap the quota to a reasonable amount - browsers often report much more than is reliably available
@@ -50,7 +52,7 @@ export async function checkStorageUsage(dbName: string): Promise<StorageInfo | n
       const quota = Math.min(reportedQuota, MAX_REASONABLE_QUOTA);
       const percentUsed = used / quota;
       
-      return {
+      const result = {
         used,
         quota,
         percentUsed,
@@ -59,8 +61,11 @@ export async function checkStorageUsage(dbName: string): Promise<StorageInfo | n
         formattedUsed: formatBytes(used),
         formattedQuota: formatBytes(quota)
       };
+      console.log("checkStorageUsage: Processed storage info:", result);
+      return result;
     } else {
       // Fallback to IndexedDB-specific size estimation
+      console.log("checkStorageUsage: Storage API not available, falling back to manual estimation");
       return await estimateIndexedDBSize(dbName);
     }
   } catch (error) {
