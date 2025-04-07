@@ -212,8 +212,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Extract uploaded file paths
       const files = req.files as Express.Multer.File[];
+      
+      // Handle existing screenshots if provided
+      let existingScreenshots: string[] = [];
+      if (req.body.existingScreenshots) {
+        try {
+          existingScreenshots = JSON.parse(req.body.existingScreenshots);
+          delete req.body.existingScreenshots; // Remove from body as it's not part of the schema
+        } catch (e) {
+          console.error("Error parsing existingScreenshots:", e);
+        }
+      }
+      
+      // Add new screenshots if uploaded
       if (files && files.length > 0) {
-        req.body.screenshots = files.map(file => `/uploads/${file.filename}`);
+        const newScreenshots = files.map(file => `/uploads/${file.filename}`);
+        
+        // Combine with existing screenshots if any
+        if (existingScreenshots.length > 0) {
+          req.body.screenshots = [...existingScreenshots, ...newScreenshots];
+        } else {
+          req.body.screenshots = newScreenshots;
+        }
+      } else if (existingScreenshots.length > 0) {
+        // If no new files but we have existing screenshots to keep
+        req.body.screenshots = existingScreenshots;
       }
       
       // Parse date string to Date object if provided

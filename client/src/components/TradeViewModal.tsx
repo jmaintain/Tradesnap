@@ -31,10 +31,12 @@ import {
   ChevronRight,
   X,
   Maximize2,
+  Edit,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Trade } from '@shared/schema';
 import ImageViewer from './ImageViewer';
+import EditTradeModal from './EditTradeModal';
 
 interface TradeViewModalProps {
   isOpen: boolean;
@@ -57,6 +59,8 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
   );
   const [selectedTrades, setSelectedTrades] = useState<Trade[]>([]);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [tradeToEdit, setTradeToEdit] = useState<Trade | undefined>(undefined);
 
   // Group trades by date
   const tradesByDate = useMemo(() => {
@@ -137,6 +141,12 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
       e.preventDefault();
     }
     setEnlargedImage(null);
+  };
+  
+  // Handle editing a trade
+  const handleEditTrade = (trade: Trade) => {
+    setTradeToEdit(trade);
+    setIsEditModalOpen(true);
   };
 
   // Default to the current trade if nothing is selected
@@ -277,11 +287,22 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                               {trade.tradeType}
                             </Badge>
                           </CardTitle>
-                          <div className={cn(
-                            "text-lg font-bold",
-                            isProfitable ? "text-green-600" : "text-red-600"
-                          )}>
-                            {isProfitable ? '+' : ''}${Math.abs(parseFloat(trade.pnlDollars || '0')).toFixed(2)}
+                          <div className="flex items-center gap-4">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="flex items-center gap-1"
+                              onClick={() => handleEditTrade(trade)}
+                            >
+                              <Edit className="h-4 w-4" />
+                              Edit
+                            </Button>
+                            <div className={cn(
+                              "text-lg font-bold",
+                              isProfitable ? "text-green-600" : "text-red-600"
+                            )}>
+                              {isProfitable ? '+' : ''}${Math.abs(parseFloat(trade.pnlDollars || '0')).toFixed(2)}
+                            </div>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
@@ -384,6 +405,16 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
           onClose={handleCloseEnlargedImage} 
         />
       )}
+      
+      {/* Edit Trade Modal */}
+      <EditTradeModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setTradeToEdit(undefined);
+        }} 
+        trade={tradeToEdit}
+      />
     </>
   );
 };
