@@ -161,30 +161,43 @@ const JournalPage = () => {
     },
   });
 
-  // Custom render function for calendar days with indicators
+  // Custom renderer for the calendar
   const renderCalendarDay = useCallback(
-    (day: Date, modifiers: Record<string, boolean>) => {
+    (props: any) => {
+      // Extract day and other properties safely
+      const { date: day, ...dayProps } = props;
+      
+      if (!day || !(day instanceof Date) || isNaN(day.getTime())) {
+        // Return a default day cell if we have an invalid date
+        return <div {...dayProps}>{dayProps.children}</div>;
+      }
+      
       // Format date to check for journal entries and trades
       const dayFormatted = format(day, 'yyyy-MM-dd');
       
       // Check if there are trades for this day
       const hasTrades = allTrades.some(trade => {
-        const tradeDate = new Date(trade.date);
-        return format(tradeDate, 'yyyy-MM-dd') === dayFormatted;
+        if (!trade.date) return false;
+        try {
+          const tradeDate = new Date(trade.date);
+          return format(tradeDate, 'yyyy-MM-dd') === dayFormatted;
+        } catch (e) {
+          return false;
+        }
       });
 
-      // Check if this day has any journal entries (this would need to be enhanced with a query for all entries)
+      // Check if this day has journal entries (this would need to be enhanced with a query for all entries)
       const hasJournalEntries = false;
 
       return (
-        <div className="relative">
-          <div className={cn(
-            'w-full h-full flex items-center justify-center',
-            modifiers.selected && 'bg-primary text-primary-foreground rounded-md',
-            !modifiers.outside && !modifiers.selected && modifiers.today && 'border border-primary rounded-md',
-          )}>
-            {day.getDate()}
-          </div>
+        <div 
+          {...dayProps} 
+          className={cn(
+            dayProps.className,
+            'relative',
+          )}
+        >
+          {dayProps.children}
           
           {hasJournalEntries && (
             <div className="absolute bottom-1 left-1 h-1 w-1 rounded-full bg-blue-500" />
