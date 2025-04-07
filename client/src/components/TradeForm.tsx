@@ -30,8 +30,13 @@ import { UploadCloud } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 
-// Extend the trade schema for the form
+// Extend the trade schema for the form with required fields validation
 const tradeFormSchema = insertTradeSchema.extend({
+  symbol: z.string().min(1, { message: "Symbol is required" }),
+  tradeType: z.string().min(1, { message: "Trade type is required" }),
+  quantity: z.number().min(1, { message: "Quantity must be at least 1" }),
+  entryPrice: z.string().min(1, { message: "Entry price is required" }),
+  exitPrice: z.string().min(1, { message: "Exit price is required" }),
   date: z.any().transform(val => val ? new Date(val) : new Date()),
   screenshots: z.any().optional(),
   // Ensuring default userId for demo purposes
@@ -85,9 +90,10 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
   };
 
   const onSubmit = async (data: TradeFormValues) => {
-    setIsSubmitting(true);
-    
+    // Use try-catch to handle any form validation errors that might occur
     try {
+      setIsSubmitting(true);
+      
       // Create FormData for file upload
       const formData = new FormData();
       
@@ -175,16 +181,54 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
     }
   };
 
+  // Add form error check handler
+  const handleFormSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    
+    // Use validate to check for errors
+    const validationResult = await form.trigger();
+    
+    // If there are validation errors, show them in toast
+    if (!validationResult) {
+      // Get the errors from form state
+      const errors = form.formState.errors;
+      
+      // Build error message
+      const errorFields: string[] = Object.keys(errors).map(fieldName => {
+        const error = errors[fieldName as keyof typeof errors];
+        return (error?.message as string) || `${fieldName} is required`;
+      });
+      
+      // Show toast with validation errors
+      toast({
+        variant: "destructive",
+        title: "Missing Required Fields",
+        description: (
+          <ul className="list-disc pl-5">
+            {errorFields.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
+        ),
+      });
+      
+      return;
+    }
+    
+    // If no validation errors, proceed with form submission
+    form.handleSubmit(onSubmit)(event);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleFormSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="symbol"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Symbol</FormLabel>
+                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Symbol</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
@@ -195,7 +239,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {instruments.map((instrument: any) => (
+                    {Array.isArray(instruments) && instruments.map((instrument: {symbol: string, description: string}) => (
                       <SelectItem key={instrument.symbol} value={instrument.symbol}>
                         {instrument.symbol} - {instrument.description}
                       </SelectItem>
@@ -212,7 +256,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
             name="tradeType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Type</FormLabel>
+                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Type</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
@@ -239,7 +283,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
             name="quantity"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Quantity</FormLabel>
+                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Quantity</FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 
@@ -258,7 +302,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
             name="date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Date</FormLabel>
+                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Date</FormLabel>
                 <FormControl>
                   <Input 
                     type="date" 
@@ -279,7 +323,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
             name="entryPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Entry Price</FormLabel>
+                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Entry Price</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" {...field} />
                 </FormControl>
@@ -293,7 +337,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
             name="exitPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Exit Price</FormLabel>
+                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Exit Price</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" {...field} />
                 </FormControl>
@@ -313,7 +357,11 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
                 <Textarea 
                   placeholder="Add notes about your trade here..." 
                   className="resize-none"
-                  {...field}
+                  value={field.value || ''}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  ref={field.ref}
                 />
               </FormControl>
               <FormMessage />
