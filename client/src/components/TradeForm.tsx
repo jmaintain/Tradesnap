@@ -6,6 +6,7 @@ import { insertTradeSchema } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { processImageFile } from '@/lib/imageCompression';
 
 import {
   Form,
@@ -99,10 +100,46 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
         }
       });
       
-      // Add files if any
-      files.forEach(file => {
-        formData.append('screenshots', file);
-      });
+      // Process and compress images before adding them to FormData
+      if (files.length > 0) {
+        // Show a toast message to indicate compression is happening
+        toast({
+          title: "Processing images",
+          description: "Compressing screenshots to optimize storage...",
+        });
+        
+        // Process each file individually
+        for (const file of files) {
+          try {
+            // If it's an image file, compress it to approximately 100KB
+            if (file.type.startsWith('image/')) {
+              const compressedImageDataUrl = await processImageFile(file, 100);
+              
+              // Convert the data URL back to a Blob/File for upload
+              const base64Response = await fetch(compressedImageDataUrl);
+              const compressedBlob = await base64Response.blob();
+              
+              // Create a new File from the compressed Blob
+              const compressedFile = new File(
+                [compressedBlob], 
+                file.name, 
+                { type: 'image/jpeg', lastModified: Date.now() }
+              );
+              
+              // Add the compressed file to FormData
+              formData.append('screenshots', compressedFile);
+              console.log(`Compressed image from ${Math.round(file.size / 1024)}KB to ${Math.round(compressedBlob.size / 1024)}KB`);
+            } else {
+              // If it's not an image, add the original file
+              formData.append('screenshots', file);
+            }
+          } catch (error) {
+            console.error("Error compressing image:", error);
+            // If compression fails, use the original file
+            formData.append('screenshots', file);
+          }
+        }
+      }
       
       // Custom fetch with FormData
       const response = await fetch('/api/trades', {
@@ -305,7 +342,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
                 <p className="pl-1">or drag and drop</p>
               </div>
               <p className="text-xs text-gray-500">
-                PNG, JPG, GIF up to 10MB (max 2 files)
+                PNG, JPG, GIF up to 10MB (max 2 files, compressed to ~100KB each)
               </p>
               {files.length > 0 && (
                 <div className="mt-2">
