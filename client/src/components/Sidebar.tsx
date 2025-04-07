@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { BarChart3, ClipboardList, PieChart, Settings, ChartLine, User } from 'lucide-react';
+import { BarChart3, ClipboardList, PieChart, Settings, ChartLine, User, BookOpen } from 'lucide-react';
 
 const Sidebar = () => {
   const [location] = useLocation();
@@ -21,6 +21,12 @@ const Sidebar = () => {
       path: '/trades', 
       icon: <ClipboardList className="h-5 w-5" />,
       active: isActive('/trades')
+    },
+    { 
+      name: 'Journal', 
+      path: '/journal', 
+      icon: <BookOpen className="h-5 w-5" />,
+      active: isActive('/journal')
     },
     { 
       name: 'Analytics', 
