@@ -35,10 +35,7 @@ interface TradesForDate {
 }
 
 const JournalPage = () => {
-  // Create a date object for "today" then subtract one day to default to yesterday (April 6)
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const [date, setDate] = useState<Date>(yesterday);
+  const [date, setDate] = useState<Date>(new Date());
   const [showNewEntryDialog, setShowNewEntryDialog] = useState(false);
   const [journalContent, setJournalContent] = useState('');
   const [mood, setMood] = useState('neutral');
@@ -53,8 +50,7 @@ const JournalPage = () => {
   // Query for journal entries on selected date
   const { data: journalEntries = [] } = useQuery({
     queryKey: ['/api/journal/date', formattedDate],
-    queryFn: () => apiRequestAdapter<JournalEntry[]>(`/api/journal/date/${formattedDate}`),
-    // Using the apiRequestAdapter for proper error handling
+    queryFn: getQueryFn<JournalEntry[]>({ on401: 'returnNull' }),
   });
 
   // Query for trades on selected date
@@ -165,13 +161,12 @@ const JournalPage = () => {
       // Format date to check for journal entries and trades
       const dayFormatted = format(day, 'yyyy-MM-dd');
       
-      // We need to check for both journal entries and trades for this date
-      // We should have a separate check for journal entries when they're implemented
-      // For now, we don't have any journal entries in our system
-      
-      // Hard-code April 6th, 2025 (yesterday) to have a journal entry for demonstration
-      const hasJournalEntries = format(new Date(2025, 3, 6), 'yyyy-MM-dd') === dayFormatted;
-      
+      // Check if there are journal entries for this day
+      const hasJournalEntries = allTrades.some(trade => {
+        const tradeDate = new Date(trade.date);
+        return format(tradeDate, 'yyyy-MM-dd') === dayFormatted;
+      });
+
       // Check if there are trades for this day
       const hasTrades = allTrades.some(trade => {
         const tradeDate = new Date(trade.date);
