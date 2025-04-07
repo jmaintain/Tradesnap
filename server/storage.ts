@@ -1,0 +1,269 @@
+import { 
+  users, type User, type InsertUser,
+  instruments, type Instrument, type InsertInstrument,
+  trades, type Trade, type InsertTrade,
+  settings, type Settings, type InsertSettings
+} from "@shared/schema";
+
+export interface IStorage {
+  // User operations
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+
+  // Instrument operations
+  getInstruments(): Promise<Instrument[]>;
+  getInstrumentBySymbol(symbol: string): Promise<Instrument | undefined>;
+  createInstrument(instrument: InsertInstrument): Promise<Instrument>;
+  updateInstrument(id: number, instrument: Partial<InsertInstrument>): Promise<Instrument | undefined>;
+  deleteInstrument(id: number): Promise<boolean>;
+
+  // Trade operations
+  getTrades(userId: number): Promise<Trade[]>;
+  getTradeById(id: number): Promise<Trade | undefined>;
+  createTrade(trade: InsertTrade): Promise<Trade>;
+  updateTrade(id: number, trade: Partial<InsertTrade>): Promise<Trade | undefined>;
+  deleteTrade(id: number): Promise<boolean>;
+
+  // Settings operations
+  getSettings(userId: number): Promise<Settings | undefined>;
+  createOrUpdateSettings(settings: InsertSettings): Promise<Settings>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private instruments: Map<number, Instrument>;
+  private trades: Map<number, Trade>;
+  private settings: Map<number, Settings>;
+  private userId: number;
+  private instrumentId: number;
+  private tradeId: number;
+  private settingId: number;
+
+  constructor() {
+    this.users = new Map();
+    this.instruments = new Map();
+    this.trades = new Map();
+    this.settings = new Map();
+    this.userId = 1;
+    this.instrumentId = 1;
+    this.tradeId = 1;
+    this.settingId = 1;
+
+    // Initialize with default instruments
+    this.initializeInstruments();
+  }
+
+  // Initialize with common futures instruments
+  private initializeInstruments() {
+    const defaultInstruments: InsertInstrument[] = [
+      {
+        symbol: "ES",
+        description: "E-mini S&P 500",
+        tickSize: "0.25",
+        tickValue: "12.50",
+        pointValue: "50.00",
+      },
+      {
+        symbol: "NQ",
+        description: "E-mini NASDAQ-100",
+        tickSize: "0.25",
+        tickValue: "5.00",
+        pointValue: "20.00",
+      },
+      {
+        symbol: "CL",
+        description: "Crude Oil",
+        tickSize: "0.01",
+        tickValue: "10.00",
+        pointValue: "1000.00",
+      },
+      {
+        symbol: "GC",
+        description: "Gold",
+        tickSize: "0.10",
+        tickValue: "10.00",
+        pointValue: "100.00",
+      },
+      {
+        symbol: "YM",
+        description: "E-mini Dow Jones",
+        tickSize: "1.00",
+        tickValue: "5.00",
+        pointValue: "5.00",
+      },
+    ];
+
+    defaultInstruments.forEach(instrument => {
+      this.createInstrument(instrument);
+    });
+  }
+
+  // Calculate P&L for a trade
+  private calculatePnL(trade: InsertTrade, instrument?: Instrument): { pnlPoints: string, pnlDollars: string } {
+    // Default values if instrument not found
+    const pointValue = instrument ? Number(instrument.pointValue) : 1;
+    
+    const entryPrice = Number(trade.entryPrice);
+    const exitPrice = Number(trade.exitPrice);
+    const quantity = Number(trade.quantity);
+    let pnlPoints = 0;
+    
+    if (trade.tradeType === "long") {
+      pnlPoints = exitPrice - entryPrice;
+    } else {
+      // For short trades, the P&L is reversed
+      pnlPoints = entryPrice - exitPrice;
+    }
+    
+    const pnlDollars = pnlPoints * pointValue * quantity;
+    
+    return {
+      pnlPoints: pnlPoints.toFixed(2),
+      pnlDollars: pnlDollars.toFixed(2),
+    };
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.userId++;
+    const user: User = { ...insertUser, id };
+    this.users.set(id, user);
+    return user;
+  }
+
+  // Instrument operations
+  async getInstruments(): Promise<Instrument[]> {
+    return Array.from(this.instruments.values());
+  }
+
+  async getInstrumentBySymbol(symbol: string): Promise<Instrument | undefined> {
+    return Array.from(this.instruments.values()).find(
+      (instrument) => instrument.symbol === symbol,
+    );
+  }
+
+  async createInstrument(insertInstrument: InsertInstrument): Promise<Instrument> {
+    const id = this.instrumentId++;
+    const instrument: Instrument = { ...insertInstrument, id };
+    this.instruments.set(id, instrument);
+    return instrument;
+  }
+
+  async updateInstrument(id: number, updateData: Partial<InsertInstrument>): Promise<Instrument | undefined> {
+    const instrument = this.instruments.get(id);
+    if (!instrument) return undefined;
+
+    const updatedInstrument = { ...instrument, ...updateData };
+    this.instruments.set(id, updatedInstrument);
+    return updatedInstrument;
+  }
+
+  async deleteInstrument(id: number): Promise<boolean> {
+    return this.instruments.delete(id);
+  }
+
+  // Trade operations
+  async getTrades(userId: number): Promise<Trade[]> {
+    return Array.from(this.trades.values())
+      .filter(trade => trade.userId === userId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async getTradeById(id: number): Promise<Trade | undefined> {
+    return this.trades.get(id);
+  }
+
+  async createTrade(insertTrade: InsertTrade): Promise<Trade> {
+    const id = this.tradeId++;
+    
+    // Get the instrument to calculate P&L
+    const instrument = await this.getInstrumentBySymbol(insertTrade.symbol);
+    const { pnlPoints, pnlDollars } = this.calculatePnL(insertTrade, instrument);
+    
+    const trade: Trade = { 
+      ...insertTrade, 
+      id, 
+      pnlPoints, 
+      pnlDollars,
+      createdAt: new Date()
+    };
+    
+    this.trades.set(id, trade);
+    return trade;
+  }
+
+  async updateTrade(id: number, updateData: Partial<InsertTrade>): Promise<Trade | undefined> {
+    const trade = this.trades.get(id);
+    if (!trade) return undefined;
+
+    // Create a merged trade object
+    const mergedTrade: InsertTrade = {
+      ...trade,
+      ...updateData,
+      // Ensure these required fields are present
+      userId: updateData.userId || trade.userId,
+      symbol: updateData.symbol || trade.symbol,
+      tradeType: updateData.tradeType || trade.tradeType,
+      quantity: updateData.quantity || trade.quantity,
+      entryPrice: updateData.entryPrice || trade.entryPrice,
+      exitPrice: updateData.exitPrice || trade.exitPrice,
+      date: updateData.date || trade.date,
+    };
+
+    // Recalculate P&L if price data changed
+    const instrument = await this.getInstrumentBySymbol(mergedTrade.symbol);
+    const { pnlPoints, pnlDollars } = this.calculatePnL(mergedTrade, instrument);
+
+    const updatedTrade: Trade = {
+      ...trade,
+      ...updateData,
+      pnlPoints,
+      pnlDollars,
+    };
+
+    this.trades.set(id, updatedTrade);
+    return updatedTrade;
+  }
+
+  async deleteTrade(id: number): Promise<boolean> {
+    return this.trades.delete(id);
+  }
+
+  // Settings operations
+  async getSettings(userId: number): Promise<Settings | undefined> {
+    return Array.from(this.settings.values()).find(
+      (setting) => setting.userId === userId
+    );
+  }
+
+  async createOrUpdateSettings(insertSettings: InsertSettings): Promise<Settings> {
+    // Check if settings already exist for this user
+    const existingSettings = await this.getSettings(insertSettings.userId);
+    
+    if (existingSettings) {
+      // Update existing settings
+      const updatedSettings: Settings = { ...existingSettings, ...insertSettings };
+      this.settings.set(existingSettings.id, updatedSettings);
+      return updatedSettings;
+    } else {
+      // Create new settings
+      const id = this.settingId++;
+      const settings: Settings = { ...insertSettings, id };
+      this.settings.set(id, settings);
+      return settings;
+    }
+  }
+}
+
+export const storage = new MemStorage();

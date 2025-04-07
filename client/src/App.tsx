@@ -1,0 +1,124 @@
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import NotFound from "@/pages/not-found";
+import Sidebar from "@/components/Sidebar";
+import Dashboard from "@/pages/Dashboard";
+import AllTrades from "@/pages/AllTrades";
+import Settings from "@/pages/Settings";
+import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+
+function Router() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      {/* Desktop Sidebar */}
+      <Sidebar />
+      
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="fixed inset-0 bg-gray-800 bg-opacity-75" onClick={toggleMobileMenu}></div>
+          <div className="relative flex flex-col w-full max-w-xs h-full bg-gray-800 pt-5 pb-4">
+            <div className="absolute top-0 right-0 p-1">
+              <Button 
+                variant="ghost" 
+                className="flex items-center justify-center h-10 w-10 text-gray-300 hover:text-white"
+                onClick={toggleMobileMenu}
+              >
+                <X className="h-6 w-6" />
+              </Button>
+            </div>
+            <div className="flex-shrink-0 flex items-center px-4 mb-4">
+              <span className="h-8 w-auto text-white text-xl font-bold">TradeSnap</span>
+            </div>
+            <div className="flex-1 h-0 overflow-y-auto">
+              <nav className="px-2 space-y-1">
+                <a href="/" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-white bg-gray-900">
+                  Dashboard
+                </a>
+                <a href="/trades" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
+                  Trades
+                </a>
+                <a href="/analytics" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
+                  Analytics
+                </a>
+                <a href="/settings" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
+                  Settings
+                </a>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 w-0 overflow-hidden">
+        {/* Mobile header */}
+        <div className="relative z-10 flex items-center h-16 flex-shrink-0 border-b border-gray-200 bg-white md:hidden">
+          <Button
+            variant="ghost"
+            className="px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 md:hidden"
+            onClick={toggleMobileMenu}
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+          <div className="flex-1 flex justify-center">
+            <div className="flex items-center">
+              <ChartLine className="h-6 w-6 text-blue-500 mr-2" />
+              <span className="font-semibold text-gray-900">TradeSnap</span>
+            </div>
+          </div>
+          <div className="px-4">
+            <div className="rounded-full h-8 w-8 flex items-center justify-center bg-gray-800 text-white">
+              <User className="h-4 w-4" />
+            </div>
+          </div>
+        </div>
+
+        <main className="flex-1 relative overflow-y-auto focus:outline-none">
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/trades" component={AllTrades} />
+            <Route path="/settings" component={Settings} />
+            <Route component={NotFound} />
+          </Switch>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// SVG icons for mobile header to avoid importing Lucide components again
+const ChartLine = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M3 3v18h18" />
+    <path d="m19 9-5 5-4-4-3 3" />
+  </svg>
+);
+
+const User = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Router />
+      <Toaster />
+    </QueryClientProvider>
+  );
+}
+
+export default App;
