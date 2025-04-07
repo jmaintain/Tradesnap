@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -161,55 +161,51 @@ const JournalPage = () => {
     },
   });
 
-  // Custom renderer for the calendar
-  const renderCalendarDay = useCallback(
-    (props: any) => {
-      // Extract day and other properties safely
-      const { date: day, ...dayProps } = props;
-      
-      if (!day || !(day instanceof Date) || isNaN(day.getTime())) {
-        // Return a default day cell if we have an invalid date
-        return <div {...dayProps}>{dayProps.children}</div>;
-      }
-      
-      // Format date to check for journal entries and trades
-      const dayFormatted = format(day, 'yyyy-MM-dd');
-      
-      // Check if there are trades for this day
-      const hasTrades = allTrades.some(trade => {
-        if (!trade.date) return false;
+  // Add trade indicators to the calendar (simplified approach)
+  const getTradeDates = useMemo(() => {
+    // Get all dates that have trades
+    const tradeDates: Record<string, boolean> = {};
+    
+    allTrades.forEach(trade => {
+      if (trade.date) {
         try {
           const tradeDate = new Date(trade.date);
-          return format(tradeDate, 'yyyy-MM-dd') === dayFormatted;
+          const formattedDate = format(tradeDate, 'yyyy-MM-dd');
+          tradeDates[formattedDate] = true;
         } catch (e) {
-          return false;
+          // Ignore invalid dates
         }
-      });
-
-      // Check if this day has journal entries (this would need to be enhanced with a query for all entries)
-      const hasJournalEntries = false;
-
-      return (
-        <div 
-          {...dayProps} 
-          className={cn(
-            dayProps.className,
-            'relative',
-          )}
-        >
-          {dayProps.children}
+      }
+    });
+    
+    return tradeDates;
+  }, [allTrades]);
+  
+  // Add decorations to the calendar after it renders
+  useEffect(() => {
+    // Add indicators to calendar days that have trades
+    const tradeDays = document.querySelectorAll('.rdp-day');
+    
+    tradeDays.forEach(dayElement => {
+      const dateAttr = dayElement.getAttribute('aria-label');
+      if (dateAttr) {
+        try {
+          // Try to parse the date from the aria-label
+          const dayDate = new Date(dateAttr);
+          const formattedDate = format(dayDate, 'yyyy-MM-dd');
           
-          {hasJournalEntries && (
-            <div className="absolute bottom-1 left-1 h-1 w-1 rounded-full bg-blue-500" />
-          )}
-          {hasTrades && (
-            <div className="absolute bottom-1 right-1 h-1 w-1 rounded-full bg-green-500" />
-          )}
-        </div>
-      );
-    },
-    [allTrades]
-  );
+          // If this day has trades, add an indicator
+          if (getTradeDates[formattedDate]) {
+            const indicator = document.createElement('div');
+            indicator.className = 'absolute bottom-1 right-1 h-1 w-1 rounded-full bg-green-500';
+            dayElement.appendChild(indicator);
+          }
+        } catch (e) {
+          // Ignore parsing errors
+        }
+      }
+    });
+  }, [getTradeDates, date]);
 
   const handleCreateEntry = () => {
     // Use ISO string format to include time information
@@ -270,10 +266,7 @@ const JournalPage = () => {
               mode="single"
               selected={date}
               onSelect={(newDate) => newDate && setDate(newDate)}
-              className="border rounded-md"
-              components={{
-                Day: renderCalendarDay,
-              }}
+              className="border rounded-md relative"
             />
           </CardContent>
           <CardFooter className="flex justify-center text-sm text-muted-foreground">
