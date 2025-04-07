@@ -2,7 +2,8 @@ import {
   users, type User, type InsertUser,
   instruments, type Instrument, type InsertInstrument,
   trades, type Trade, type InsertTrade,
-  settings, type Settings, type InsertSettings
+  settings, type Settings, type InsertSettings,
+  journalEntries, type JournalEntry, type InsertJournalEntry
 } from "@shared/schema";
 
 export interface IStorage {
@@ -28,6 +29,14 @@ export interface IStorage {
   // Settings operations
   getSettings(userId: number): Promise<Settings | undefined>;
   createOrUpdateSettings(settings: InsertSettings): Promise<Settings>;
+  
+  // Journal operations
+  getJournalEntries(userId: number): Promise<JournalEntry[]>;
+  getJournalEntriesByDate(userId: number, date: Date): Promise<JournalEntry[]>;
+  getJournalEntryById(id: number): Promise<JournalEntry | undefined>;
+  createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry>;
+  updateJournalEntry(id: number, entry: Partial<InsertJournalEntry>): Promise<JournalEntry | undefined>;
+  deleteJournalEntry(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -35,20 +44,24 @@ export class MemStorage implements IStorage {
   private instruments: Map<number, Instrument>;
   private trades: Map<number, Trade>;
   private settings: Map<number, Settings>;
+  private journalEntries: Map<number, JournalEntry>;
   private userId: number;
   private instrumentId: number;
   private tradeId: number;
   private settingId: number;
+  private journalEntryId: number;
 
   constructor() {
     this.users = new Map();
     this.instruments = new Map();
     this.trades = new Map();
     this.settings = new Map();
+    this.journalEntries = new Map();
     this.userId = 1;
     this.instrumentId = 1;
     this.tradeId = 1;
     this.settingId = 1;
+    this.journalEntryId = 1;
 
     // Initialize with default instruments
     this.initializeInstruments();
@@ -299,6 +312,62 @@ export class MemStorage implements IStorage {
       this.settings.set(id, settings);
       return settings;
     }
+  }
+
+  // Journal entry operations
+  async getJournalEntries(userId: number): Promise<JournalEntry[]> {
+    return Array.from(this.journalEntries.values())
+      .filter(entry => entry.userId === userId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async getJournalEntriesByDate(userId: number, date: Date): Promise<JournalEntry[]> {
+    // Format the date to YYYY-MM-DD to compare just the day, month, and year
+    const targetDate = new Date(date);
+    const targetDateString = targetDate.toISOString().split('T')[0];
+    
+    return Array.from(this.journalEntries.values())
+      .filter(entry => {
+        const entryDate = new Date(entry.date);
+        const entryDateString = entryDate.toISOString().split('T')[0];
+        return entry.userId === userId && entryDateString === targetDateString;
+      })
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async getJournalEntryById(id: number): Promise<JournalEntry | undefined> {
+    return this.journalEntries.get(id);
+  }
+
+  async createJournalEntry(insertEntry: InsertJournalEntry): Promise<JournalEntry> {
+    const id = this.journalEntryId++;
+    const entry: JournalEntry = { 
+      ...insertEntry, 
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    this.journalEntries.set(id, entry);
+    return entry;
+  }
+
+  async updateJournalEntry(id: number, updateData: Partial<InsertJournalEntry>): Promise<JournalEntry | undefined> {
+    const entry = this.journalEntries.get(id);
+    if (!entry) return undefined;
+
+    const updatedEntry: JournalEntry = {
+      ...entry,
+      ...updateData,
+      updatedAt: new Date()
+    };
+
+    this.journalEntries.set(id, updatedEntry);
+    return updatedEntry;
+  }
+
+  async deleteJournalEntry(id: number): Promise<boolean> {
+    return this.journalEntries.delete(id);
   }
 }
 

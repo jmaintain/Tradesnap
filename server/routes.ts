@@ -7,7 +7,8 @@ import fs from "fs";
 import { 
   insertTradeSchema, 
   insertInstrumentSchema, 
-  insertSettingsSchema
+  insertSettingsSchema,
+  insertJournalEntrySchema
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -335,6 +336,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settings = await storage.createOrUpdateSettings(parsedData);
       
       res.status(201).json(settings);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  // Journal entry endpoints
+  app.get("/api/journal", async (req: Request, res: Response) => {
+    try {
+      // For demo purposes, default to user ID 1
+      const userId = 1;
+      const entries = await storage.getJournalEntries(userId);
+      res.json(entries);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.get("/api/journal/date/:date", async (req: Request, res: Response) => {
+    try {
+      // For demo purposes, default to user ID 1
+      const userId = 1;
+      const date = new Date(req.params.date);
+      
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+      
+      const entries = await storage.getJournalEntriesByDate(userId, date);
+      res.json(entries);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.get("/api/journal/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const entry = await storage.getJournalEntryById(id);
+      if (!entry) {
+        return res.status(404).json({ message: "Journal entry not found" });
+      }
+      
+      res.json(entry);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.post("/api/journal", async (req: Request, res: Response) => {
+    try {
+      // For demo purposes, default to user ID 1
+      req.body.userId = 1;
+      
+      // Parse date string to Date object if provided
+      if (req.body.date) {
+        req.body.date = new Date(req.body.date);
+      } else {
+        req.body.date = new Date();
+      }
+      
+      const parsedData = insertJournalEntrySchema.parse(req.body);
+      const entry = await storage.createJournalEntry(parsedData);
+      
+      res.status(201).json(entry);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.put("/api/journal/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      // Parse date string to Date object if provided
+      if (req.body.date) {
+        req.body.date = new Date(req.body.date);
+      }
+      
+      const parsedData = insertJournalEntrySchema.partial().parse(req.body);
+      const entry = await storage.updateJournalEntry(id, parsedData);
+      
+      if (!entry) {
+        return res.status(404).json({ message: "Journal entry not found" });
+      }
+      
+      res.json(entry);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.delete("/api/journal/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const entry = await storage.getJournalEntryById(id);
+      if (!entry) {
+        return res.status(404).json({ message: "Journal entry not found" });
+      }
+      
+      const success = await storage.deleteJournalEntry(id);
+      res.status(204).end();
     } catch (err) {
       handleError(err, res);
     }

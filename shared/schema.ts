@@ -76,3 +76,23 @@ export const insertSettingsSchema = createInsertSchema(settings).omit({
 
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
 export type Settings = typeof settings.$inferSelect;
+
+// Journal entries schema
+export const journalEntries = pgTable("journal_entries", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  date: timestamp("date").notNull(),
+  content: text("content").notNull(),
+  mood: text("mood").default("neutral"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertJournalEntry = z.infer<typeof insertJournalEntrySchema>;
+export type JournalEntry = typeof journalEntries.$inferSelect;
