@@ -40,34 +40,55 @@ export function formatBytes(bytes: number): string {
  */
 export async function checkStorageUsage(dbName: string): Promise<StorageInfo | null> {
   try {
-    // Check if browser supports the Storage API
+    // First get the browser's estimation (for quota info)
+    let reportedQuota = DEFAULT_QUOTA;
+    let usageFromNavigator = 0;
+    
     if (navigator.storage && navigator.storage.estimate) {
-      console.log("checkStorageUsage: Using Storage API");
+      console.log("checkStorageUsage: Getting quota from Storage API");
       const estimation = await navigator.storage.estimate();
       console.log("checkStorageUsage: Raw storage estimate:", estimation);
-      
-      const used = estimation.usage || 0;
-      // Cap the quota to a reasonable amount - browsers often report much more than is reliably available
-      const reportedQuota = estimation.quota || DEFAULT_QUOTA;
-      const quota = Math.min(reportedQuota, MAX_REASONABLE_QUOTA);
-      const percentUsed = used / quota;
-      
-      const result = {
-        used,
+      reportedQuota = estimation.quota || DEFAULT_QUOTA;
+      usageFromNavigator = estimation.usage || 0;
+    }
+    
+    // Cap the quota to a reasonable amount 
+    const quota = Math.min(reportedQuota, MAX_REASONABLE_QUOTA);
+    
+    // Always do our own estimation for more accurate usage tracking
+    console.log("checkStorageUsage: Performing manual measurement of IndexedDB size");
+    const manualEstimation = await estimateIndexedDBSize(dbName);
+    
+    if (!manualEstimation) {
+      console.log("checkStorageUsage: Manual estimation failed, falling back to navigator values");
+      const percentUsed = usageFromNavigator / quota;
+      return {
+        used: usageFromNavigator,
         quota,
         percentUsed,
         isApproachingLimit: percentUsed >= DEFAULT_WARNING_THRESHOLD,
         isNearLimit: percentUsed >= DEFAULT_CRITICAL_THRESHOLD,
-        formattedUsed: formatBytes(used),
+        formattedUsed: formatBytes(usageFromNavigator),
         formattedQuota: formatBytes(quota)
       };
-      console.log("checkStorageUsage: Processed storage info:", result);
-      return result;
-    } else {
-      // Fallback to IndexedDB-specific size estimation
-      console.log("checkStorageUsage: Storage API not available, falling back to manual estimation");
-      return await estimateIndexedDBSize(dbName);
     }
+    
+    // Use our manually calculated usage value but keep the quota from the browser
+    const used = manualEstimation.used;
+    const percentUsed = used / quota;
+    
+    const result = {
+      used,
+      quota,
+      percentUsed,
+      isApproachingLimit: percentUsed >= DEFAULT_WARNING_THRESHOLD,
+      isNearLimit: percentUsed >= DEFAULT_CRITICAL_THRESHOLD,
+      formattedUsed: formatBytes(used),
+      formattedQuota: formatBytes(quota)
+    };
+    
+    console.log("checkStorageUsage: Final storage info:", result);
+    return result;
   } catch (error) {
     console.error("Failed to check storage usage:", error);
     return null;
@@ -76,23 +97,35 @@ export async function checkStorageUsage(dbName: string): Promise<StorageInfo | n
 
 /**
  * Estimate the size of an IndexedDB database
- * This is a rough estimate based on JSON stringification
+ * This is a rough estimate based on JSON stringification, giving special attention to screenshot data
  */
 async function estimateIndexedDBSize(dbName: string): Promise<StorageInfo | null> {
   try {
+    console.log("estimateIndexedDBSize: Opening database", dbName);
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(dbName);
-      request.onerror = () => reject(request.error);
+      request.onerror = (e) => {
+        console.error("Failed to open database:", e);
+        reject(request.error);
+      };
       request.onsuccess = () => resolve(request.result);
     });
     
     const storeNames = Array.from(db.objectStoreNames);
+    console.log(`estimateIndexedDBSize: Found stores: ${storeNames.join(', ')}`);
     let totalSize = 0;
+    
+    // Create a detailed size breakdown for debugging
+    const storeSizes: Record<string, number> = {};
     
     for (const storeName of storeNames) {
       const size = await estimateObjectStoreSize(db, storeName);
       totalSize += size;
+      storeSizes[storeName] = size;
     }
+    
+    console.log("estimateIndexedDBSize: Store size breakdown:", storeSizes);
+    console.log("estimateIndexedDBSize: Total estimated size:", formatBytes(totalSize));
     
     db.close();
     
@@ -112,7 +145,8 @@ async function estimateIndexedDBSize(dbName: string): Promise<StorageInfo | null
 }
 
 /**
- * Estimate the size of an object store by getting all records and measuring their JSON size
+ * Estimate the size of an object store by getting all records and measuring their JSON size,
+ * with special handling for trade screenshots which can be large
  */
 async function estimateObjectStoreSize(db: IDBDatabase, storeName: string): Promise<number> {
   return new Promise<number>((resolve, reject) => {
@@ -123,21 +157,51 @@ async function estimateObjectStoreSize(db: IDBDatabase, storeName: string): Prom
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       let size = 0;
+      let itemsProcessed = 0;
+      
+      console.log(`estimateObjectStoreSize: Processing ${request.result.length} items in store ${storeName}`);
       
       // Estimate size by JSON stringifying each record
       for (const item of request.result) {
         try {
-          // Try to serialize the item to estimate its size
-          const serialized = JSON.stringify(item);
-          // Add 2 bytes per character (UTF-16 encoding)
-          size += serialized.length * 2;
+          // Special handling for trade records with screenshots
+          if (storeName === 'trades' && item.screenshots) {
+            // Deep clone the item without screenshots to avoid modifying the original
+            const itemWithoutScreenshots = { ...item, screenshots: null };
+            
+            // Calculate base size without screenshots
+            const baseSize = JSON.stringify(itemWithoutScreenshots).length * 2;
+            
+            // Add size for screenshots if present
+            let screenshotSize = 0;
+            if (Array.isArray(item.screenshots)) {
+              // Calculate size for each screenshot
+              for (const screenshot of item.screenshots) {
+                if (typeof screenshot === 'string') {
+                  // Base64 encoded images are approximately 4/3 the size of the binary data
+                  screenshotSize += screenshot.length * 0.75;
+                }
+              }
+              console.log(`estimateObjectStoreSize: Trade ${item.id} has ${item.screenshots.length} screenshots, estimated size: ${formatBytes(screenshotSize)}`);
+            }
+            
+            size += baseSize + screenshotSize;
+          } else {
+            // Normal processing for other records
+            const serialized = JSON.stringify(item);
+            size += serialized.length * 2;
+          }
+          
+          itemsProcessed++;
         } catch (e) {
           // If serialization fails, make a rough guess
-          console.warn(`Could not stringify item in ${storeName}`, e);
-          size += 1000; // Add a default size
+          console.warn(`Could not process item in ${storeName}`, e);
+          size += 5000; // Add a larger default size to be safe
+          itemsProcessed++;
         }
       }
       
+      console.log(`estimateObjectStoreSize: Processed ${itemsProcessed} items in store ${storeName}, total size: ${formatBytes(size)}`);
       resolve(size);
     };
   });

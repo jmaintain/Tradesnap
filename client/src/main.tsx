@@ -13,10 +13,9 @@ async function initializeApp() {
     await initializeIndexedDB();
     console.log("IndexedDB initialized successfully");
     
-    // Note: Synchronization temporarily disabled until sync implementation is fixed
-    // Will enable this in a future update
-    // await performFullSync();
-    // console.log("Data synchronized successfully");
+    // Enable data synchronization to populate IndexedDB with server data
+    await performFullSync();
+    console.log("Data synchronized successfully");
   } catch (error) {
     console.error("Error during initialization:", error);
   }
@@ -29,12 +28,9 @@ initializeApp();
 createRoot(document.getElementById("root")!).render(<App />);
 
 // Add an event listener to sync data when the app regains focus (user returns to tab)
-// Temporarily disabled until sync implementation is fixed
-/*
 window.addEventListener('focus', () => {
   console.log("Window regained focus, syncing data...");
   performFullSync().catch(error => {
     console.error("Error syncing data on focus:", error);
   });
 });
-*/
