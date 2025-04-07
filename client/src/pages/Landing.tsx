@@ -1,19 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Logo from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, BarChart2, LineChart, PieChart, ShieldCheck, Zap } from 'lucide-react';
+import { ArrowRight, BarChart2, LineChart, Mail, PieChart, ShieldCheck, Zap } from 'lucide-react';
 import { apiRequestAdapter } from '@/lib/apiAdapter';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useLocation } from 'wouter';
 
 // Define interface for our form data
 interface EmailFormData {
   email: string;
 }
 
+// Response from the server
+interface SubscribeResponse {
+  email: string;
+  status: string;
+  message: string;
+}
+
 const Landing: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVerificationAlert, setShowVerificationAlert] = useState(false);
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,16 +52,38 @@ const Landing: React.FC = () => {
     
     try {
       // Send the subscription to the backend
-      await apiRequestAdapter<{id: number, email: string, status: string, createdAt: Date}>('/api/subscribe', {
+      const response = await apiRequestAdapter<SubscribeResponse>('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, status: 'active' }),
+        body: JSON.stringify({ email }),
       });
       
-      toast({
-        title: 'Thank you for subscribing!',
-        description: 'We\'ll keep you updated on our latest features.',
-      });
+      if (response.status === 'active') {
+        // Save verified email in localStorage
+        localStorage.setItem('userEmail', email);
+        
+        // Already verified
+        toast({
+          title: 'Welcome back!',
+          description: 'Your email is already verified. You can access the application.',
+        });
+        
+        // Redirect to app after a short delay
+        setTimeout(() => {
+          setLocation('/');
+        }, 2000);
+      } else {
+        // Save email in localStorage even when pending
+        localStorage.setItem('userEmail', email);
+        
+        // Verification email sent
+        toast({
+          title: 'Verification email sent!',
+          description: 'Please check your inbox and click the verification link.',
+        });
+        
+        setShowVerificationAlert(true);
+      }
       
       setEmail('');
     } catch (error) {
@@ -92,6 +125,17 @@ const Landing: React.FC = () => {
                 analyze patterns, and make data-driven decisions to improve your trading.
               </p>
               
+              {showVerificationAlert && (
+                <Alert className="mt-6 border-blue-200 bg-blue-50">
+                  <Mail className="h-5 w-5 text-blue-600" />
+                  <AlertTitle className="text-blue-800">Check your email</AlertTitle>
+                  <AlertDescription className="text-blue-700">
+                    We've sent a verification link to your email address. 
+                    Please click the link to access TradeSnap.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <div className="mt-8">
                 <form onSubmit={handleSubmit} className="max-w-md sm:flex sm:divide-x-0">
                   <div className="sm:flex-1">
@@ -116,7 +160,9 @@ const Landing: React.FC = () => {
                   </Button>
                 </form>
                 <p className="mt-3 text-sm text-gray-500">
-                  We'll notify you when we launch. No spam, ever.
+                  {showVerificationAlert 
+                    ? "Don't see the email? Check your spam folder."
+                    : "We'll notify you when we launch. No spam, ever."}
                 </p>
               </div>
             </div>

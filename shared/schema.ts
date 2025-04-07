@@ -102,12 +102,18 @@ export const subscribers = pgTable("subscribers", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  status: text("status").default("active").notNull(),
+  status: text("status").default("pending").notNull(), // Changed default from "active" to "pending"
+  verificationToken: text("verification_token"),
+  verificationExpires: timestamp("verification_expires"),
+  verifiedAt: timestamp("verified_at"),
 });
 
 export const insertSubscriberSchema = createInsertSchema(subscribers).omit({
   id: true,
   createdAt: true,
+  verificationToken: true,
+  verificationExpires: true,
+  verifiedAt: true,
 });
 
 export type InsertSubscriber = z.infer<typeof insertSubscriberSchema>;

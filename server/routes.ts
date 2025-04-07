@@ -464,16 +464,229 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/subscribe", async (req: Request, res: Response) => {
+  // Check if email is verified
+  app.get("/api/verify-status", async (req: Request, res: Response) => {
     try {
-      const parsedData = insertSubscriberSchema.parse(req.body);
-      const subscriber = await storage.createSubscriber(parsedData);
-      res.status(201).json(subscriber);
+      const { email } = req.query;
+      
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ 
+          verified: false, 
+          message: "Email parameter is required" 
+        });
+      }
+      
+      const subscriber = await storage.getSubscriberByEmail(email);
+      
+      if (!subscriber) {
+        return res.status(200).json({ 
+          verified: false, 
+          message: "Email not registered" 
+        });
+      }
+      
+      return res.status(200).json({
+        verified: subscriber.status === 'active',
+        status: subscriber.status,
+        message: subscriber.status === 'active' 
+          ? "Email verified" 
+          : "Email not verified"
+      });
     } catch (err) {
       handleError(err, res);
     }
   });
-
+  
+  app.post("/api/subscribe", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Invalid email format" });
+      }
+      
+      // Check if email already exists and is verified
+      const existingSubscriber = await storage.getSubscriberByEmail(email);
+      if (existingSubscriber && existingSubscriber.status === "active") {
+        return res.status(200).json({
+          email: existingSubscriber.email,
+          status: existingSubscriber.status,
+          message: "Email already verified"
+        });
+      }
+      
+      // Import email utilities
+      const { generateVerificationToken, calculateTokenExpiry, sendVerificationEmail } = await import('./utils/email');
+      
+      // Generate verification token and expiry
+      const verificationToken = generateVerificationToken();
+      const verificationExpires = calculateTokenExpiry(24); // 24 hours
+      
+      // Create or update subscriber with pending status
+      let subscriber;
+      if (existingSubscriber) {
+        subscriber = await storage.updateSubscriber(existingSubscriber.id, {
+          status: "pending",
+          verificationToken,
+          verificationExpires
+        });
+      } else {
+        subscriber = await storage.createSubscriber({
+          email,
+          status: "pending",
+        });
+        
+        // Update with verification token if subscriber was created successfully
+        if (subscriber) {
+          subscriber = await storage.updateSubscriber(subscriber.id, {
+            verificationToken,
+            verificationExpires
+          });
+        }
+      }
+      
+      // Safety check - ensure subscriber exists before proceeding
+      if (!subscriber) {
+        return res.status(500).json({ error: "Failed to create or update subscriber" });
+      }
+      
+      // Send verification email
+      const emailSent = await sendVerificationEmail(email, verificationToken);
+      
+      if (!emailSent) {
+        return res.status(500).json({ error: "Failed to send verification email" });
+      }
+      
+      return res.status(201).json({
+        email: subscriber.email,
+        status: subscriber.status,
+        message: "Verification email sent. Please check your inbox."
+      });
+    } catch (err) {
+      return handleError(err, res);
+    }
+  });
+  
+  // Email verification endpoint
+  app.get("/verify/:token", async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      
+      if (!token) {
+        return res.status(400).send(`
+          <html>
+            <head>
+              <title>Verification Failed</title>
+              <style>
+                body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+                .error { color: #d32f2f; }
+              </style>
+            </head>
+            <body>
+              <h1 class="error">Verification Failed</h1>
+              <p>Invalid verification link. Please try again.</p>
+              <a href="/landing">Return to homepage</a>
+            </body>
+          </html>
+        `);
+      }
+      
+      const subscriber = await storage.verifySubscriber(token);
+      
+      if (!subscriber) {
+        return res.status(400).send(`
+          <html>
+            <head>
+              <title>Verification Failed</title>
+              <style>
+                body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+                .error { color: #d32f2f; }
+              </style>
+            </head>
+            <body>
+              <h1 class="error">Verification Failed</h1>
+              <p>The verification link is invalid or has expired.</p>
+              <a href="/landing">Return to homepage</a>
+            </body>
+          </html>
+        `);
+      }
+      
+      return res.status(200).send(`
+        <html>
+          <head>
+            <title>Email Verified</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+              .success { color: #388e3c; }
+              .btn { 
+                background-color: #0066cc; 
+                color: white; 
+                padding: 10px 20px; 
+                text-decoration: none; 
+                border-radius: 4px; 
+                display: inline-block;
+                margin-top: 20px;
+              }
+              .loader {
+                border: 5px solid #f3f3f3;
+                border-top: 5px solid #0066cc;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin: 20px auto;
+              }
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            </style>
+            <script>
+              // Store the verified email in localStorage
+              localStorage.setItem('userEmail', '${subscriber.email}');
+              
+              // Redirect to app after a short delay
+              setTimeout(function() {
+                window.location.href = '/';
+              }, 2000);
+            </script>
+          </head>
+          <body>
+            <h1 class="success">Email Verified Successfully!</h1>
+            <p>Thank you for verifying your email address.</p>
+            <p>You can now access TradeSnap with all features.</p>
+            <div class="loader"></div>
+            <p>Redirecting to application...</p>
+          </body>
+        </html>
+      `);
+    } catch (err) {
+      console.error('Verification error:', err);
+      return res.status(500).send(`
+        <html>
+          <head>
+            <title>Verification Error</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+              .error { color: #d32f2f; }
+            </style>
+          </head>
+          <body>
+            <h1 class="error">Verification Failed</h1>
+            <p>An error occurred during verification. Please try again.</p>
+            <a href="/landing">Return to homepage</a>
+          </body>
+        </html>
+      `);
+    }
+  });
+  
   // Serve uploaded files
   app.use("/uploads", express.static(uploadDir));
 

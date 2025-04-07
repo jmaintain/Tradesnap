@@ -42,8 +42,10 @@ export interface IStorage {
   // Subscriber operations
   getSubscribers(): Promise<Subscriber[]>;
   getSubscriberByEmail(email: string): Promise<Subscriber | undefined>;
+  getSubscriberByToken(token: string): Promise<Subscriber | undefined>;
   createSubscriber(subscriber: InsertSubscriber): Promise<Subscriber>;
   updateSubscriber(id: number, subscriber: Partial<InsertSubscriber>): Promise<Subscriber | undefined>;
+  verifySubscriber(token: string): Promise<Subscriber | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -392,6 +394,12 @@ export class MemStorage implements IStorage {
       (subscriber) => subscriber.email === email
     );
   }
+  
+  async getSubscriberByToken(token: string): Promise<Subscriber | undefined> {
+    return Array.from(this.subscribers.values()).find(
+      (subscriber) => subscriber.verificationToken === token
+    );
+  }
 
   async createSubscriber(insertSubscriber: InsertSubscriber): Promise<Subscriber> {
     // Check if email already exists
@@ -406,14 +414,21 @@ export class MemStorage implements IStorage {
       ...insertSubscriber, 
       id,
       status: insertSubscriber.status || 'pending', 
-      createdAt: new Date() 
+      createdAt: new Date(),
+      verificationToken: null,
+      verificationExpires: null,
+      verifiedAt: null
     };
     
     this.subscribers.set(id, subscriber);
     return subscriber;
   }
 
-  async updateSubscriber(id: number, updateData: Partial<InsertSubscriber>): Promise<Subscriber | undefined> {
+  async updateSubscriber(id: number, updateData: Partial<InsertSubscriber> & {
+    verificationToken?: string | null,
+    verificationExpires?: Date | null,
+    verifiedAt?: Date | null
+  }): Promise<Subscriber | undefined> {
     const subscriber = this.subscribers.get(id);
     if (!subscriber) return undefined;
 
@@ -423,6 +438,27 @@ export class MemStorage implements IStorage {
     };
 
     this.subscribers.set(id, updatedSubscriber);
+    return updatedSubscriber;
+  }
+  
+  async verifySubscriber(token: string): Promise<Subscriber | undefined> {
+    const subscriber = await this.getSubscriberByToken(token);
+    if (!subscriber) {
+      return undefined;
+    }
+    
+    // Check if token is expired
+    if (subscriber.verificationExpires && new Date() > subscriber.verificationExpires) {
+      return undefined;
+    }
+    
+    const updatedSubscriber = await this.updateSubscriber(subscriber.id, {
+      status: "active",
+      verifiedAt: new Date(),
+      verificationToken: null,
+      verificationExpires: null
+    });
+    
     return updatedSubscriber;
   }
 }

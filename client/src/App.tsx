@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, useRouter } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,10 +12,79 @@ import Journal from "@/pages/Journal";
 import Landing from "@/pages/Landing";
 import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StorageProvider } from "@/lib/indexedDB/StorageContext";
+import { apiRequestAdapter } from "@/lib/apiAdapter";
 
-function Router() {
+interface VerifyStatusResponse {
+  verified: boolean;
+  status?: string;
+  message: string;
+}
+
+function AuthHandler() {
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
+  const [, setLocation] = useLocation();
+  
+  useEffect(() => {
+    const checkVerification = async () => {
+      // If we're already on the landing page, don't redirect
+      if (window.location.pathname === '/landing') {
+        setIsVerifying(false);
+        return;
+      }
+      
+      try {
+        // Check for stored email in local storage
+        const email = localStorage.getItem('userEmail');
+        
+        // If no email is stored, redirect to landing
+        if (!email) {
+          setLocation('/landing');
+          setIsVerifying(false);
+          return;
+        }
+        
+        // Check email verification status
+        const response = await apiRequestAdapter<VerifyStatusResponse>(
+          `/api/verify-status?email=${encodeURIComponent(email)}`
+        );
+        
+        if (response.verified) {
+          setIsVerified(true);
+        } else {
+          // Not verified, redirect to landing
+          setLocation('/landing');
+        }
+      } catch (error) {
+        console.error('Failed to verify email status:', error);
+        // On error, redirect to landing
+        setLocation('/landing');
+      } finally {
+        setIsVerifying(false);
+      }
+    };
+    
+    checkVerification();
+  }, [setLocation]);
+  
+  // Show nothing while verifying
+  if (isVerifying) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return <Router isVerified={isVerified} />;
+}
+
+function Router({ isVerified }: { isVerified: boolean }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
   
@@ -25,6 +94,11 @@ function Router() {
 
   // Show landing page at /landing route
   if (location === "/landing") {
+    return <Landing />;
+  }
+  
+  // If not verified and not on landing page, user shouldn't access the app
+  if (!isVerified && location !== "/landing") {
     return <Landing />;
   }
 
@@ -132,7 +206,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <StorageProvider>
-        <Router />
+        <AuthHandler />
         <Toaster />
       </StorageProvider>
     </QueryClientProvider>
