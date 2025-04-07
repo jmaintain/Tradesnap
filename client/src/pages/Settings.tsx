@@ -33,6 +33,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Save } from 'lucide-react';
+import { StorageManagement } from '@/components/ui/storage-management';
 
 // Extend the settings schema for the form
 const settingsFormSchema = insertSettingsSchema.omit({ userId: true }).extend({
@@ -209,7 +210,9 @@ const Settings: React.FC = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <StorageManagement monthsToRetain={1} />
+        
+        <Card className="mt-8">
           <CardHeader>
             <CardTitle>Account Information</CardTitle>
             <CardDescription>
