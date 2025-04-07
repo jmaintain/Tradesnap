@@ -269,18 +269,6 @@ const JournalPage = () => {
               className="border rounded-md relative"
             />
           </CardContent>
-          <CardFooter className="flex justify-center text-sm text-muted-foreground">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center">
-                <div className="h-2 w-2 rounded-full bg-blue-500 mr-1"></div>
-                <span>Journal Entry</span>
-              </div>
-              <div className="flex items-center">
-                <div className="h-2 w-2 rounded-full bg-green-500 mr-1"></div>
-                <span>Trade</span>
-              </div>
-            </div>
-          </CardFooter>
         </Card>
 
         <div className="space-y-6">
