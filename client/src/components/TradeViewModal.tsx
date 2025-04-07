@@ -374,15 +374,39 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
       {enlargedImage && (
         <div 
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
-          onClick={handleCloseEnlargedImage}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleCloseEnlargedImage();
+          }}
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          tabIndex={0}
+          role="dialog"
+          aria-modal="true"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              e.stopPropagation();
+              handleCloseEnlargedImage();
+            }
+          }}
         >
-          <div className="relative max-h-[90vh] max-w-[90vw] overflow-auto" onClick={(e) => e.stopPropagation()}>
+          <div 
+            className="relative max-h-[90vh] max-w-[90vw] overflow-auto" 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
             <Button 
               variant="ghost" 
               size="icon"
               className="absolute top-2 right-2 bg-white/20 hover:bg-white/40 rounded-full z-10"
-              onClick={handleCloseEnlargedImage}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCloseEnlargedImage();
+              }}
             >
               <X className="h-6 w-6 text-white" />
             </Button>
