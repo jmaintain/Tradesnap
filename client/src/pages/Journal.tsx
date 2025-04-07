@@ -161,51 +161,51 @@ const JournalPage = () => {
     },
   });
 
-  // Add trade indicators to the calendar (simplified approach)
-  const getTradeDates = useMemo(() => {
-    // Get all dates that have trades
-    const tradeDates: Record<string, boolean> = {};
+  // Get dates that have data (trades and/or journal entries)
+  const getDatesWithData = useMemo(() => {
+    // Get all dates that have trades or journal entries
+    const datesWithData: Record<string, boolean> = {};
     
+    // Add trade dates
     allTrades.forEach(trade => {
       if (trade.date) {
         try {
           const tradeDate = new Date(trade.date);
           const formattedDate = format(tradeDate, 'yyyy-MM-dd');
-          tradeDates[formattedDate] = true;
+          datesWithData[formattedDate] = true;
         } catch (e) {
           // Ignore invalid dates
         }
       }
     });
     
-    return tradeDates;
+    // We could also add journal entry dates here if we had a query for all journal entries
+    // For now, we only highlight days with trades
+    
+    return datesWithData;
   }, [allTrades]);
   
-  // Add decorations to the calendar after it renders
-  useEffect(() => {
-    // Add indicators to calendar days that have trades
-    const tradeDays = document.querySelectorAll('.rdp-day');
-    
-    tradeDays.forEach(dayElement => {
-      const dateAttr = dayElement.getAttribute('aria-label');
-      if (dateAttr) {
-        try {
-          // Try to parse the date from the aria-label
-          const dayDate = new Date(dateAttr);
-          const formattedDate = format(dayDate, 'yyyy-MM-dd');
-          
-          // If this day has trades, add an indicator
-          if (getTradeDates[formattedDate]) {
-            const indicator = document.createElement('div');
-            indicator.className = 'absolute bottom-1 right-1 h-1 w-1 rounded-full bg-green-500';
-            dayElement.appendChild(indicator);
-          }
-        } catch (e) {
-          // Ignore parsing errors
-        }
-      }
-    });
-  }, [getTradeDates, date]);
+  // Custom day component for highlighting dates with data
+  const customDayComponent = useCallback(
+    (props: React.HTMLAttributes<HTMLDivElement> & { date: Date }) => {
+      const { date: dayDate, ...otherProps } = props;
+      
+      // Format the date to check against our record of dates with data
+      const formattedDate = format(dayDate, 'yyyy-MM-dd');
+      const hasData = getDatesWithData[formattedDate];
+      
+      return (
+        <div
+          {...otherProps}
+          className={cn(
+            otherProps.className,
+            hasData && 'bg-primary/10 font-semibold'
+          )}
+        />
+      );
+    },
+    [getDatesWithData]
+  );
 
   const handleCreateEntry = () => {
     // Use ISO string format to include time information
@@ -267,18 +267,14 @@ const JournalPage = () => {
               selected={date}
               onSelect={(newDate) => newDate && setDate(newDate)}
               className="border rounded-md relative"
+              components={{
+                Day: customDayComponent
+              }}
             />
           </CardContent>
           <CardFooter className="flex justify-center text-sm text-muted-foreground">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center">
-                <div className="h-2 w-2 rounded-full bg-blue-500 mr-1"></div>
-                <span>Journal Entry</span>
-              </div>
-              <div className="flex items-center">
-                <div className="h-2 w-2 rounded-full bg-green-500 mr-1"></div>
-                <span>Trade</span>
-              </div>
+            <div className="text-center">
+              <span>Highlighted dates contain journal entries or trades</span>
             </div>
           </CardFooter>
         </Card>
