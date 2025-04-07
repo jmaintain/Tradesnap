@@ -203,9 +203,10 @@ const JournalPage = () => {
   );
 
   const handleCreateEntry = () => {
+    // Use ISO string format to include time information
     createMutation.mutate({
       content: journalContent,
-      date: formattedDate,
+      date: date.toISOString(),
       mood,
     });
   };
