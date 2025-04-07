@@ -161,35 +161,31 @@ const JournalPage = () => {
     },
   });
 
-  // Date cell component for the calendar
+  // Custom render function for calendar days with indicators
   const renderCalendarDay = useCallback(
-    (props: DayProps) => {
-      const { date: day, ...dayProps } = props;
-      
+    (day: Date, modifiers: Record<string, boolean>) => {
       // Format date to check for journal entries and trades
       const dayFormatted = format(day, 'yyyy-MM-dd');
       
-      // Placeholder for when we can check for journal entries
-      // This would need to be implemented with a separate query that gets all journal entries
-      const hasJournalEntries = false;
-
       // Check if there are trades for this day
       const hasTrades = allTrades.some(trade => {
         const tradeDate = new Date(trade.date);
         return format(tradeDate, 'yyyy-MM-dd') === dayFormatted;
       });
 
+      // Check if this day has any journal entries (this would need to be enhanced with a query for all entries)
+      const hasJournalEntries = false;
+
       return (
-        <div
-          {...dayProps}
-          className={cn(
-            dayProps.className,
-            'relative',
-            hasJournalEntries && 'journal-entry-indicator',
-            hasTrades && 'trade-indicator'
-          )}
-        >
-          {day.getDate()}
+        <div className="relative">
+          <div className={cn(
+            'w-full h-full flex items-center justify-center',
+            modifiers.selected && 'bg-primary text-primary-foreground rounded-md',
+            !modifiers.outside && !modifiers.selected && modifiers.today && 'border border-primary rounded-md',
+          )}>
+            {day.getDate()}
+          </div>
+          
           {hasJournalEntries && (
             <div className="absolute bottom-1 left-1 h-1 w-1 rounded-full bg-blue-500" />
           )}
