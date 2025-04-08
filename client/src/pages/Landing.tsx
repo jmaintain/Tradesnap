@@ -198,19 +198,22 @@ const Landing: React.FC = () => {
               </div>
             </div>
             <div className="hidden md:block">
-              <div className="relative h-96 w-full">
-                <div className="absolute inset-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+              <div className="relative h-[400px] w-full">
+                <div className="absolute inset-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 shadow-lg">
                   <div className="w-full h-full relative">
                     {/* Dashboard screenshot */}
                     <img 
                       src="/dashboard-screenshot.png" 
                       alt="TradeSnap Dashboard" 
-                      className="w-full h-full object-cover rounded-lg"
+                      className="w-full h-full object-contain rounded-lg"
                     />
                     
-                    {/* Logo branding overlay */}
-                    <div className="absolute bottom-4 right-4 bg-white bg-opacity-80 rounded-full p-2 shadow-md">
-                      <Logo size="sm" />
+                    {/* Overlay gradient for better text visibility */}
+                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-900/30 to-transparent rounded-b-lg"></div>
+                    
+                    {/* Feature highlight badges */}
+                    <div className="absolute top-4 right-4 bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-md">
+                      Real-Time Analytics
                     </div>
                   </div>
                 </div>
