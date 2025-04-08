@@ -118,9 +118,6 @@ const Landing: React.FC = () => {
             <Logo size="sm" />
             <h1 className="text-xl font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">TradeSnap</h1>
           </div>
-          <Button variant="outline" size="sm" className="hidden sm:flex">
-            Sign in
-          </Button>
         </div>
       </header>
 
