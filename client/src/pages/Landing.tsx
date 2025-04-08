@@ -200,10 +200,19 @@ const Landing: React.FC = () => {
             <div className="hidden md:block">
               <div className="relative h-96 w-full">
                 <div className="absolute inset-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                  <VideoWithPlaceholder 
-                    src="/TradeSnap-Demo-vid.mov" 
-                    type="video/quicktime"
-                  />
+                  <div className="w-full h-full relative">
+                    {/* Dashboard screenshot */}
+                    <img 
+                      src="/assets/dashboard-screenshot.png" 
+                      alt="TradeSnap Dashboard" 
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    
+                    {/* Logo branding overlay */}
+                    <div className="absolute bottom-4 right-4 bg-white bg-opacity-80 rounded-full p-2 shadow-md">
+                      <Logo size="sm" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
