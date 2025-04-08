@@ -39,7 +39,7 @@ const upload = multer({
     const filetypes = /jpeg|jpg|png|gif/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    
+
     if (mimetype && extname) {
       return cb(null, true);
     }
@@ -56,7 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         errors: fromZodError(err).message 
       });
     }
-    
+
     console.error(err);
     res.status(500).json({ message: err.message || "Internal server error" });
   };
@@ -99,14 +99,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID format" });
       }
-      
+
       const parsedData = insertInstrumentSchema.partial().parse(req.body);
       const instrument = await storage.updateInstrument(id, parsedData);
-      
+
       if (!instrument) {
         return res.status(404).json({ message: "Instrument not found" });
       }
-      
+
       res.json(instrument);
     } catch (err) {
       handleError(err, res);
@@ -119,12 +119,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID format" });
       }
-      
+
       const success = await storage.deleteInstrument(id);
       if (!success) {
         return res.status(404).json({ message: "Instrument not found" });
       }
-      
+
       res.status(204).end();
     } catch (err) {
       handleError(err, res);
@@ -149,12 +149,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID format" });
       }
-      
+
       const trade = await storage.getTradeById(id);
       if (!trade) {
         return res.status(404).json({ message: "Trade not found" });
       }
-      
+
       res.json(trade);
     } catch (err) {
       handleError(err, res);
@@ -166,15 +166,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Extract uploaded file paths
       const files = req.files as Express.Multer.File[];
       const screenshotPaths = files ? files.map(file => `/uploads/${file.filename}`) : [];
-      
+
       // Add screenshots paths to the request body
       req.body.screenshots = screenshotPaths;
-      
+
       // Parse date string to Date object
       if (req.body.date) {
         req.body.date = new Date(req.body.date);
       }
-      
+
       // Ensure numeric fields are properly formatted
       if (req.body.entryPrice) {
         req.body.entryPrice = req.body.entryPrice.toString();
@@ -185,13 +185,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.quantity) {
         req.body.quantity = parseInt(req.body.quantity);
       }
-      
+
       // For demo purposes, default to user ID 1
       req.body.userId = 1;
-      
+
       const parsedData = insertTradeSchema.parse(req.body);
       const trade = await storage.createTrade(parsedData);
-      
+
       res.status(201).json(trade);
     } catch (err) {
       // Clean up uploaded files if validation fails
@@ -211,10 +211,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID format" });
       }
-      
+
       // Extract uploaded file paths
       const files = req.files as Express.Multer.File[];
-      
+
       // Handle existing screenshots if provided
       let existingScreenshots: string[] = [];
       if (req.body.existingScreenshots) {
@@ -225,11 +225,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error parsing existingScreenshots:", e);
         }
       }
-      
+
       // Add new screenshots if uploaded
       if (files && files.length > 0) {
         const newScreenshots = files.map(file => `/uploads/${file.filename}`);
-        
+
         // Combine with existing screenshots if any
         if (existingScreenshots.length > 0) {
           req.body.screenshots = [...existingScreenshots, ...newScreenshots];
@@ -240,12 +240,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // If no new files but we have existing screenshots to keep
         req.body.screenshots = existingScreenshots;
       }
-      
+
       // Parse date string to Date object if provided
       if (req.body.date) {
         req.body.date = new Date(req.body.date);
       }
-      
+
       // Ensure numeric fields are properly formatted
       if (req.body.entryPrice) {
         req.body.entryPrice = req.body.entryPrice.toString();
@@ -256,14 +256,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.quantity) {
         req.body.quantity = parseInt(req.body.quantity);
       }
-      
+
       const parsedData = insertTradeSchema.partial().parse(req.body);
       const trade = await storage.updateTrade(id, parsedData);
-      
+
       if (!trade) {
         return res.status(404).json({ message: "Trade not found" });
       }
-      
+
       res.json(trade);
     } catch (err) {
       // Clean up uploaded files if validation fails
@@ -283,12 +283,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID format" });
       }
-      
+
       const trade = await storage.getTradeById(id);
       if (!trade) {
         return res.status(404).json({ message: "Trade not found" });
       }
-      
+
       // Remove screenshot files if they exist
       if (trade.screenshots && Array.isArray(trade.screenshots)) {
         trade.screenshots.forEach(screenshot => {
@@ -298,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       }
-      
+
       const success = await storage.deleteTrade(id);
       res.status(204).end();
     } catch (err) {
@@ -312,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For demo purposes, default to user ID 1
       const userId = 1;
       const userSettings = await storage.getSettings(userId);
-      
+
       if (!userSettings) {
         // Return default settings if none exist
         return res.json({
@@ -321,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           theme: "light"
         });
       }
-      
+
       res.json(userSettings);
     } catch (err) {
       handleError(err, res);
@@ -332,10 +332,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // For demo purposes, default to user ID 1
       req.body.userId = 1;
-      
+
       const parsedData = insertSettingsSchema.parse(req.body);
       const settings = await storage.createOrUpdateSettings(parsedData);
-      
+
       res.status(201).json(settings);
     } catch (err) {
       handleError(err, res);
@@ -359,11 +359,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For demo purposes, default to user ID 1
       const userId = 1;
       const date = new Date(req.params.date);
-      
+
       if (isNaN(date.getTime())) {
         return res.status(400).json({ message: "Invalid date format" });
       }
-      
+
       const entries = await storage.getJournalEntriesByDate(userId, date);
       res.json(entries);
     } catch (err) {
@@ -377,12 +377,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID format" });
       }
-      
+
       const entry = await storage.getJournalEntryById(id);
       if (!entry) {
         return res.status(404).json({ message: "Journal entry not found" });
       }
-      
+
       res.json(entry);
     } catch (err) {
       handleError(err, res);
@@ -393,17 +393,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // For demo purposes, default to user ID 1
       req.body.userId = 1;
-      
+
       // Parse date string to Date object if provided
       if (req.body.date) {
         req.body.date = new Date(req.body.date);
       } else {
         req.body.date = new Date();
       }
-      
+
       const parsedData = insertJournalEntrySchema.parse(req.body);
       const entry = await storage.createJournalEntry(parsedData);
-      
+
       res.status(201).json(entry);
     } catch (err) {
       handleError(err, res);
@@ -416,19 +416,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID format" });
       }
-      
+
       // Parse date string to Date object if provided
       if (req.body.date) {
         req.body.date = new Date(req.body.date);
       }
-      
+
       const parsedData = insertJournalEntrySchema.partial().parse(req.body);
       const entry = await storage.updateJournalEntry(id, parsedData);
-      
+
       if (!entry) {
         return res.status(404).json({ message: "Journal entry not found" });
       }
-      
+
       res.json(entry);
     } catch (err) {
       handleError(err, res);
@@ -441,12 +441,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID format" });
       }
-      
+
       const entry = await storage.getJournalEntryById(id);
       if (!entry) {
         return res.status(404).json({ message: "Journal entry not found" });
       }
-      
+
       const success = await storage.deleteJournalEntry(id);
       res.status(204).end();
     } catch (err) {
@@ -464,12 +464,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/subscribers/verified", async (req: Request, res: Response) => {
+    try {
+      const subscribers = await storage.getSubscribers();
+      const verifiedSubscribers = subscribers.filter(sub => sub.status === 'active');
+      res.json({
+        total: verifiedSubscribers.length,
+        subscribers: verifiedSubscribers.map(sub => ({
+          email: sub.email,
+          verifiedAt: sub.updatedAt
+        }))
+      });
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
   // Check if email is verified
   app.get("/api/verify-status", async (req: Request, res: Response) => {
     try {
       const { email } = req.query;
       const isDevelopment = process.env.NODE_ENV === 'development' || true; // Force dev mode for testing
-      
+
       // In development mode, allow auto-verification for testing
       if (isDevelopment) {
         console.log('DEV MODE: Bypassing email verification requirement');
@@ -480,23 +496,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isDevelopment: true
         });
       }
-      
+
       if (!email || typeof email !== 'string') {
         return res.status(400).json({ 
           verified: false, 
           message: "Email parameter is required" 
         });
       }
-      
+
       const subscriber = await storage.getSubscriberByEmail(email);
-      
+
       if (!subscriber) {
         return res.status(200).json({ 
           verified: false, 
           message: "Email not registered" 
         });
       }
-      
+
       return res.status(200).json({
         verified: subscriber.status === 'active',
         status: subscriber.status,
@@ -508,20 +524,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleError(err, res);
     }
   });
-  
+
   app.post("/api/subscribe", async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
       if (!email) {
         return res.status(400).json({ error: "Email is required" });
       }
-      
+
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         return res.status(400).json({ error: "Invalid email format" });
       }
-      
+
       // Check if email already exists and is verified
       const existingSubscriber = await storage.getSubscriberByEmail(email);
       if (existingSubscriber && existingSubscriber.status === "active") {
@@ -531,14 +547,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Email already verified"
         });
       }
-      
+
       // Import email utilities
       const { generateVerificationToken, calculateTokenExpiry, sendVerificationEmail } = await import('./utils/email');
-      
+
       // Generate verification token and expiry
       const verificationToken = generateVerificationToken();
       const verificationExpires = calculateTokenExpiry(24); // 24 hours
-      
+
       // Create or update subscriber with pending status
       let subscriber;
       if (existingSubscriber) {
@@ -552,7 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email,
           status: "pending",
         });
-        
+
         // Update with verification token if subscriber was created successfully
         if (subscriber) {
           subscriber = await storage.updateSubscriber(subscriber.id, {
@@ -561,15 +577,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       // Safety check - ensure subscriber exists before proceeding
       if (!subscriber) {
         return res.status(500).json({ error: "Failed to create or update subscriber" });
       }
-      
+
       // Check if we're in development mode (allow bypass in development)
       const isDevelopment = process.env.NODE_ENV === 'development' || true; // Force dev mode for testing
-      
+
       // Try to send verification email
       let emailSent = false;
       try {
@@ -577,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error('Error sending verification email:', error);
       }
-      
+
       // If email sending failed but we're in development mode, continue but notify
       if (!emailSent && isDevelopment) {
         console.log('DEV MODE: Bypassing email verification requirement');
@@ -591,7 +607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (!emailSent) {
         return res.status(500).json({ error: "Failed to send verification email" });
       }
-      
+
       return res.status(201).json({
         email: subscriber.email,
         status: subscriber.status,
@@ -601,12 +617,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return handleError(err, res);
     }
   });
-  
+
   // Email verification endpoint
   app.get("/verify/:token", async (req: Request, res: Response) => {
     try {
       const { token } = req.params;
-      
+
       if (!token) {
         return res.status(400).send(`
           <html>
@@ -625,9 +641,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </html>
         `);
       }
-      
+
       const subscriber = await storage.verifySubscriber(token);
-      
+
       if (!subscriber) {
         return res.status(400).send(`
           <html>
@@ -646,7 +662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </html>
         `);
       }
-      
+
       return res.status(200).send(`
         <html>
           <head>
@@ -680,7 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <script>
               // Store the verified email in localStorage
               localStorage.setItem('userEmail', '${subscriber.email}');
-              
+
               // Redirect to dashboard after a short delay
               setTimeout(function() {
                 window.location.href = '/dashboard';
@@ -716,7 +732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `);
     }
   });
-  
+
   // Serve uploaded files
   app.use("/uploads", express.static(uploadDir));
 
