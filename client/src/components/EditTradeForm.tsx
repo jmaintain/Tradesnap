@@ -644,7 +644,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
                         value={journalContent}
                         onChange={(e) => setJournalContent(e.target.value)}
                         className="col-span-3"
-                        rows={6}
+                        rows={4}
                         placeholder="Write your journal entry here..."
                       />
                     </div>
@@ -655,20 +655,21 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
           </AccordionItem>
         </Accordion>
 
-        <div className="pt-3 border-t border-gray-200">
-          <div className="flex justify-end">
+        <div className="sticky bottom-0 pt-3 mt-4 border-t border-gray-200 bg-white">
+          <div className="flex justify-end space-x-3 py-2">
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
               disabled={isSubmitting}
+              className="px-4"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="ml-3"
               disabled={isSubmitting}
+              className="px-4"
             >
               {isSubmitting ? 'Saving...' : 'Update Trade'}
             </Button>
