@@ -205,13 +205,22 @@ const Landing: React.FC = () => {
                     loop 
                     muted 
                     playsInline
-                  >
-                    <source src="/trading-video.mp4" type="video/mp4" />
-                    {/* Fallback if video doesn't load */}
-                    <Logo size="xl" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-                  </video>
-                  {/* Overlay gradient for better text visibility if needed */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-100/30 to-purple-100/30"></div>
+                    controls={false}
+                    src="/TradeSnap-Demo-vid.mov"
+                    type="video/quicktime"
+                    onError={(e) => {
+                      // If there's an error loading the video, show the logo
+                      const target = e.target as HTMLVideoElement;
+                      target.style.display = 'none';
+                      console.log('Video failed to load, showing fallback');
+                    }}
+                  />
+                  {/* Fallback component that will be shown if video fails to load */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-blue-100 to-purple-100 opacity-70">
+                    <Logo size="xl" />
+                  </div>
+                  {/* Light overlay to enhance text visibility and UI elements */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-100/20 to-purple-100/20"></div>
                 </div>
               </div>
             </div>
