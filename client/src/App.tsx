@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation, useRouter } from "wouter";
+import { Switch, Route, useLocation, useRoute, useRouter } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -22,7 +22,7 @@ import {
   Settings as SettingsIcon 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { StorageProvider } from "@/lib/indexedDB/StorageContext";
 import { apiRequestAdapter } from "@/lib/apiAdapter";
 
@@ -110,6 +110,20 @@ function AuthenticatedLayout() {
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
+  
+  // Handle logo click - redirect to dashboard if email is registered
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const email = localStorage.getItem('userEmail');
+    
+    if (email) {
+      // If email is registered, redirect to dashboard
+      window.location.href = '/dashboard';
+    } else {
+      // Otherwise go to landing page
+      window.location.href = '/';
+    }
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -131,7 +145,9 @@ function AuthenticatedLayout() {
               </Button>
             </div>
             <div className="flex-shrink-0 flex items-center px-4 mb-4">
-              <span className="h-8 w-auto text-white text-xl font-bold">TradeSnap</span>
+              <a href="/" className="flex items-center" onClick={handleLogoClick}>
+                <span className="h-8 w-auto text-white text-xl font-bold">TradeSnap</span>
+              </a>
             </div>
             <div className="flex-1 h-0 overflow-y-auto">
               <nav className="px-2 space-y-1">
@@ -189,10 +205,10 @@ function AuthenticatedLayout() {
             <Menu className="h-6 w-6" />
           </Button>
           <div className="flex-1 flex justify-center">
-            <div className="flex items-center">
+            <a href="/" className="flex items-center" onClick={handleLogoClick}>
               <ChartLine className="h-6 w-6 text-blue-500 mr-2" />
               <span className="font-semibold text-gray-900">TradeSnap</span>
-            </div>
+            </a>
           </div>
           <div className="px-4">
             <div className="rounded-full h-8 w-8 flex items-center justify-center bg-gray-800 text-white">

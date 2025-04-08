@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'wouter';
 import { BarChart3, ClipboardList, PieChart, Settings, ChartLine, Mail, BookOpen } from 'lucide-react';
 
@@ -11,6 +11,20 @@ const Sidebar = () => {
     const email = localStorage.getItem('userEmail');
     if (email) {
       setUserEmail(email);
+    }
+  }, []);
+  
+  // Handle logo click - redirect to dashboard if email is registered
+  const handleLogoClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const email = localStorage.getItem('userEmail');
+    
+    if (email) {
+      // If email is registered, redirect to dashboard
+      window.location.href = '/dashboard';
+    } else {
+      // Otherwise go to landing page
+      window.location.href = '/';
     }
   }, []);
 
@@ -61,10 +75,10 @@ const Sidebar = () => {
     <div className="hidden md:flex md:flex-shrink-0">
       <div className="flex flex-col w-64 bg-gray-800">
         <div className="flex items-center h-16 px-4 bg-gray-900">
-          <div className="flex items-center">
+          <a href="/" className="flex items-center" onClick={handleLogoClick}>
             <ChartLine className="h-6 w-6 text-blue-500 mr-2" />
             <span className="text-white font-semibold text-lg">TradeSnap</span>
-          </div>
+          </a>
         </div>
         <div className="flex flex-col flex-grow overflow-y-auto">
           <nav className="flex-1 px-2 py-4 space-y-1">
