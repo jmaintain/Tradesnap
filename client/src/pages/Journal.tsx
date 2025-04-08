@@ -313,10 +313,7 @@ const JournalPage = () => {
                           <CardHeader className="pb-2">
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-2">
-                                <CardTitle className="text-lg">
-                                  {format(new Date(entry.date), 'h:mm a')}
-                                </CardTitle>
-                                <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
+                                <span className="bg-primary/10 text-primary px-2 py-1 rounded-full">
                                   {entry.mood.charAt(0).toUpperCase() + entry.mood.slice(1)}
                                 </span>
                               </div>

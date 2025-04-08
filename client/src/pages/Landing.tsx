@@ -134,8 +134,7 @@ const Landing: React.FC = () => {
                 Trade Journaling should not be <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">hard or expensive</span>
               </h2>
               <p className="mt-4 text-lg text-gray-600 max-w-2xl">
-                TradeSnap is your personal trading journal that helps you track performance, 
-                analyze patterns, and make data-driven decisions to improve your trading.
+                TradeSnap is your personal trading journal where you manually record your trades, track performance, trading mood, and make data-driven decisions to improve your trading strategy.
               </p>
               
               {isRedirecting && (
@@ -294,7 +293,7 @@ const Landing: React.FC = () => {
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-            Elevate your trading with data-driven decisions
+            Better trades through daily reflection.
           </h2>
           <p className="mt-4 text-xl text-blue-100 max-w-2xl mx-auto">
             We're currently in beta testing. An email is required to use the app, but you won't receive any emails from us until we officially launch.
