@@ -62,11 +62,12 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [tradeToEdit, setTradeToEdit] = useState<Trade | undefined>(undefined);
 
-  // Group trades by date
+  // Group trades by date using consistent date formatting
   const tradesByDate = useMemo(() => {
     const result = new Map<string, Trade[]>();
     
     allTrades.forEach(trade => {
+      // Use a consistent date format string for grouping trades by date
       const dateKey = format(new Date(trade.date), 'yyyy-MM-dd');
       if (!result.has(dateKey)) {
         result.set(dateKey, []);
@@ -118,6 +119,7 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
     setSelectedDate(date);
     
     if (date) {
+      // Use the same consistent formatting for date keys
       const dateKey = format(date, 'yyyy-MM-dd');
       setSelectedTrades(tradesByDate.get(dateKey) || []);
     } else {
@@ -164,8 +166,12 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
   // Default to the current trade if nothing is selected
   useEffect(() => {
     if (trade && !selectedDate) {
-      setSelectedDate(new Date(trade.date));
-      const dateKey = format(new Date(trade.date), 'yyyy-MM-dd');
+      // Ensure we're using a consistently formatted date
+      const tradeDate = new Date(trade.date);
+      setSelectedDate(tradeDate);
+      
+      // Use a consistently formatted date key
+      const dateKey = format(tradeDate, 'yyyy-MM-dd');
       setSelectedTrades(tradesByDate.get(dateKey) || [trade]);
     }
   }, [trade, tradesByDate, selectedDate]);

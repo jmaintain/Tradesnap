@@ -67,14 +67,12 @@ const JournalPage = () => {
     queryFn: getQueryFn<Trade[]>({ on401: 'returnNull' }),
   });
 
-  // Filter trades for selected date
+  // Filter trades for selected date using format comparison instead of direct date objects
   const tradesForSelectedDate = allTrades.filter(trade => {
-    const tradeDate = new Date(trade.date);
-    return (
-      tradeDate.getDate() === date.getDate() &&
-      tradeDate.getMonth() === date.getMonth() &&
-      tradeDate.getFullYear() === date.getFullYear()
-    );
+    // Use the same format method for both dates to ensure consistent comparison
+    const tradeDateStr = format(new Date(trade.date), 'yyyy-MM-dd');
+    const selectedDateStr = format(date, 'yyyy-MM-dd');
+    return tradeDateStr === selectedDateStr;
   });
 
   // Using the apiRequestAdapter from @/lib/apiAdapter
