@@ -41,6 +41,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
 // Function to handle date conversion to avoid timezone issues
+// Function to handle date conversion for trade date
 const normalizeDate = (dateString: string | Date): Date => {
   // Extract date components from the input
   let date: Date;
@@ -69,6 +70,45 @@ const normalizeDate = (dateString: string | Date): Date => {
   return date;
 };
 
+// Process the date from the trade before passing it to the form
+/**
+ * Process a date value from various possible formats into a consistent Date object
+ * - Handles ISO strings from the server (2025-04-04T00:00:00.000Z)
+ * - Handles regular Date objects
+ * - Handles string date values
+ */
+const processTradeDate = (dateValue: Date | string | null | undefined): Date => {
+  console.log('Processing date value:', dateValue, 'Type:', typeof dateValue);
+  
+  if (!dateValue) {
+    console.log('No date value provided, using current date');
+    return normalizeDate(new Date());
+  }
+  
+  // If it's a string that looks like an ISO date, handle it specially
+  if (typeof dateValue === 'string') {
+    if (dateValue.includes('T')) {
+      // Extract the date part (YYYY-MM-DD) from ISO string
+      const datePart = dateValue.split('T')[0];
+      console.log('Extracted date part from ISO string:', datePart);
+      const [year, month, day] = datePart.split('-').map(Number);
+      
+      // Create a date at UTC noon to avoid timezone issues
+      const result = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+      console.log('Created UTC date from parts:', result.toISOString());
+      return result;
+    } else {
+      // Plain date string like "2025-04-08"
+      console.log('Processing plain date string:', dateValue);
+      return normalizeDate(dateValue);
+    }
+  }
+  
+  // If it's already a Date object, just normalize it
+  console.log('Processing Date object:', dateValue);
+  return normalizeDate(dateValue);
+};
+
 // Extend the trade schema for the form with required fields validation
 const tradeFormSchema = insertTradeSchema.extend({
   symbol: z.string().min(1, { message: "Symbol is required" }),
@@ -77,8 +117,8 @@ const tradeFormSchema = insertTradeSchema.extend({
   entryPrice: z.string().min(1, { message: "Entry price is required" }),
   exitPrice: z.string().min(1, { message: "Exit price is required" }),
   date: z.any().transform(val => {
-    // Use normalizeDate from the form component
-    return val ? normalizeDate(val) : normalizeDate(new Date());
+    // Use processTradeDate to handle date properly
+    return processTradeDate(val);
   }),
   screenshots: z.any().optional(),
   // Ensuring default userId for demo purposes
