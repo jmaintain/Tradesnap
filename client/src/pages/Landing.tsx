@@ -38,6 +38,8 @@ const Landing: React.FC = () => {
     return emailRegex.test(email);
   };
 
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -65,26 +67,28 @@ const Landing: React.FC = () => {
       
       // Check for development mode auto-verification
       if (response.isDevelopment || response.message?.includes('DEV MODE')) {
+        setIsRedirecting(true);
         toast({
-          title: 'Development Mode',
-          description: 'Email automatically verified for testing',
+          title: 'Verification successful!',
+          description: 'Redirecting you to the application...',
         });
         
         // Redirect to app after a short delay
         setTimeout(() => {
-          setLocation('/');
+          setLocation('/dashboard');
         }, 2000);
       }
       // Check if already verified
       else if (response.status === 'active') {
+        setIsRedirecting(true);
         toast({
           title: 'Welcome back!',
-          description: 'Your email is already verified. You can access the application.',
+          description: 'Your email is already verified. Redirecting you to the application...',
         });
         
         // Redirect to app after a short delay
         setTimeout(() => {
-          setLocation('/');
+          setLocation('/dashboard');
         }, 2000);
       } 
       // Standard verification email sent case
@@ -134,6 +138,23 @@ const Landing: React.FC = () => {
                 analyze patterns, and make data-driven decisions to improve your trading.
               </p>
               
+              {isRedirecting && (
+                <Alert className="mt-6 border-green-200 bg-green-50">
+                  <ArrowRight className="h-5 w-5 text-green-600 animate-pulse" />
+                  <AlertTitle className="text-green-800">You're all set!</AlertTitle>
+                  <AlertDescription className="text-green-700">
+                    <div className="flex items-center">
+                      <span className="mr-2">Redirecting you to the application</span>
+                      <span className="inline-flex space-x-1">
+                        <span className="animate-bounce delay-0">.</span>
+                        <span className="animate-bounce delay-100">.</span>
+                        <span className="animate-bounce delay-200">.</span>
+                      </span>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               {showVerificationAlert && (
                 <Alert className="mt-6 border-blue-200 bg-blue-50">
                   <Mail className="h-5 w-5 text-blue-600" />
@@ -162,10 +183,11 @@ const Landing: React.FC = () => {
                   <Button 
                     type="submit" 
                     className="mt-3 sm:mt-0 w-full sm:w-auto rounded-l-none font-medium"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isRedirecting}
                   >
-                    {isSubmitting ? 'Submitting...' : 'Start TradeSnap'}
-                    {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
+                    {isSubmitting ? 'Submitting...' : isRedirecting ? 'Redirecting...' : 'Start TradeSnap'}
+                    {!isSubmitting && !isRedirecting && <ArrowRight className="ml-2 h-4 w-4" />}
+                    {isRedirecting && <span className="ml-2 animate-pulse">→</span>}
                   </Button>
                 </form>
                 <p className="mt-3 text-sm text-gray-500">
@@ -284,9 +306,9 @@ const Landing: React.FC = () => {
                 type="submit" 
                 variant="secondary" 
                 className="mt-3 sm:mt-0 w-full sm:w-auto rounded-l-none shadow-sm font-medium"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isRedirecting}
               >
-                {isSubmitting ? 'Submitting...' : 'Start TradeSnap'}
+                {isSubmitting ? 'Submitting...' : isRedirecting ? 'Redirecting...' : 'Start TradeSnap'}
               </Button>
             </form>
           </div>
