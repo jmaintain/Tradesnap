@@ -32,10 +32,23 @@ interface VerifyStatusResponse {
   message: string;
 }
 
-function AuthHandler() {
+// The main app component that decides which experience to show
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <StorageProvider>
+        <AppRouter />
+        <Toaster />
+      </StorageProvider>
+    </QueryClientProvider>
+  );
+}
+
+// Router that handles all routing decisions
+function AppRouter() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
-  const [, setLocation] = useLocation();
+  const [location] = useLocation();
   
   useEffect(() => {
     const checkVerification = async () => {
@@ -65,9 +78,9 @@ function AuthHandler() {
     };
     
     checkVerification();
-  }, [setLocation]);
+  }, []);
   
-  // Show nothing while verifying
+  // Show loading indicator while verifying
   if (isVerifying) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gray-50">
@@ -79,22 +92,16 @@ function AuthHandler() {
     );
   }
   
-  return <Router isVerified={isVerified} />;
-}
-
-function Router({ isVerified }: { isVerified: boolean }) {
-  const [location] = useLocation();
-  
-  // Show landing page if not verified
-  if (!isVerified) {
+  // For Landing page OR when not verified, don't show the main app UI
+  if (!isVerified || location === "/" || location === "/landing") {
     return <Landing />;
   }
   
-  // Show authenticated app layout with sidebar
+  // Otherwise show the authenticated app UI with sidebar
   return <AuthenticatedLayout />;
 }
 
-// Separate layout component for authenticated users
+// Authenticated app layout with sidebar and main content area
 function AuthenticatedLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
@@ -127,8 +134,8 @@ function AuthenticatedLayout() {
             </div>
             <div className="flex-1 h-0 overflow-y-auto">
               <nav className="px-2 space-y-1">
-                <a href="/" className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${location === '/' ? 'text-white bg-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
-                  <div className={`mr-3 ${location === '/' ? 'text-gray-300' : 'text-gray-400'}`}>
+                <a href="/dashboard" className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${location === '/dashboard' ? 'text-white bg-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
+                  <div className={`mr-3 ${location === '/dashboard' ? 'text-gray-300' : 'text-gray-400'}`}>
                     <BarChart3 className="h-6 w-6" />
                   </div>
                   Dashboard
@@ -189,13 +196,12 @@ function AuthenticatedLayout() {
 
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
           <Switch>
-            <Route path="/" component={Dashboard} />
+            <Route path="/dashboard" component={Dashboard} />
             <Route path="/trades" component={AllTrades} />
             <Route path="/journal" component={Journal} />
             <Route path="/analytics" component={Analytics} />
             <Route path="/settings" component={Settings} />
-            <Route path="/landing" component={Landing} />
-            <Route component={NotFound} />
+            <Route component={Dashboard} /> {/* Default to Dashboard for any unmatched routes */}
           </Switch>
         </main>
       </div>
@@ -222,16 +228,5 @@ const Mail = ({ className }: { className?: string }) => (
 const SettingsIconWrapper = ({ className }: { className?: string }) => (
   <SettingsIcon className={className} />
 );
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <StorageProvider>
-        <AuthHandler />
-        <Toaster />
-      </StorageProvider>
-    </QueryClientProvider>
-  );
-}
 
 export default App;
