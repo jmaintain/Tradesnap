@@ -37,7 +37,6 @@ import { StorageManagement } from '@/components/ui/storage-management';
 
 // Extend the settings schema for the form
 const settingsFormSchema = insertSettingsSchema.omit({ userId: true }).extend({
-  theme: z.enum(['light', 'dark']).default('light'),
   defaultInstrument: z.string().optional(),
 });
 
@@ -56,31 +55,26 @@ const Settings: React.FC = () => {
   }, []);
   
   // Fetch instruments for the dropdown
-  const { data: instruments = [] } = useQuery({
+  const { data: instruments = [] } = useQuery<any[]>({
     queryKey: ['/api/instruments'],
   });
   
   // Fetch user settings
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ['/api/settings'],
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Error loading settings",
-        description: error instanceof Error ? error.message : "An error occurred"
-      });
-    }
+  const { data: settings, isLoading } = useQuery<{
+    defaultInstrument?: string;
+    theme?: string;
+    userId?: number;
+  }>({
+    queryKey: ['/api/settings']
   });
   
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsFormSchema),
     defaultValues: {
       defaultInstrument: settings?.defaultInstrument || '',
-      theme: (settings?.theme as 'light' | 'dark') || 'light',
     },
     values: {
       defaultInstrument: settings?.defaultInstrument || '',
-      theme: (settings?.theme as 'light' | 'dark') || 'light',
     }
   });
   
@@ -171,33 +165,24 @@ const Settings: React.FC = () => {
                   )}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="theme"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Theme</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select theme" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="light">Light</SelectItem>
-                          <SelectItem value="dark">Dark</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Choose your preferred appearance
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="my-4 p-4 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
+                  <div className="flex items-start">
+                    <div className="mr-3 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-blue-500">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4" />
+                        <path d="M12 8h.01" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-blue-800 mb-1">Theme Preference</h4>
+                      <p className="text-sm">
+                        TradeSnap now automatically adapts to your system's light/dark mode preference. 
+                        Change your device settings to switch between light and dark themes.
+                      </p>
+                    </div>
+                  </div>
+                </div>
                 
                 <Separator />
                 
