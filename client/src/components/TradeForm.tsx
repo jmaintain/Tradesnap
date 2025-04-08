@@ -42,9 +42,31 @@ import { Label } from "@/components/ui/label";
 
 // Function to handle date conversion to avoid timezone issues
 const normalizeDate = (dateString: string | Date): Date => {
-  const date = new Date(dateString);
-  // Create a date that preserves the day regardless of timezone
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+  // Extract date components from the input
+  let date: Date;
+  
+  if (typeof dateString === 'string' && dateString.includes('-')) {
+    // If it's a date string in YYYY-MM-DD format from date input field
+    const [year, month, day] = dateString.split('-').map(Number);
+    // Create date at noon UTC on the specified day to avoid timezone issues
+    date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  } else {
+    // For other date inputs, initialize the Date object
+    date = new Date(dateString);
+    
+    // Extract year, month and day
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    
+    // Create a new Date at noon UTC to avoid timezone boundary issues
+    date = new Date(Date.UTC(year, month, day, 12, 0, 0));
+  }
+  
+  console.log('Original input date:', dateString);
+  console.log('Normalized date (UTC noon):', date.toISOString());
+  
+  return date;
 };
 
 // Extend the trade schema for the form with required fields validation
@@ -129,7 +151,8 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
           const selectedDate = value as Date;
           // Apply normalization to ensure consistency with date handling across the app
           const normalizedDate = normalizeDate(selectedDate);
-          formData.append(key, normalizedDate.toISOString());
+          console.log('Submitting date:', normalizedDate);
+          formData.append(key, format(normalizedDate, 'yyyy-MM-dd'));
         } else if (value !== undefined && value !== null) {
           formData.append(key, value.toString());
         }
@@ -199,7 +222,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
             method: 'POST',
             body: JSON.stringify({
               content: journalContent,
-              date: normalizedDate.toISOString(),
+              date: format(normalizedDate, 'yyyy-MM-dd'),
               mood: journalMood
             }),
             headers: {
