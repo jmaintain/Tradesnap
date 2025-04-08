@@ -7,7 +7,7 @@ import { ArrowRight, BarChart2, LineChart, Mail, PieChart, ShieldCheck, Zap, Hea
 import { apiRequestAdapter } from '@/lib/apiAdapter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useLocation } from 'wouter';
-import VideoWithPlaceholder from '@/components/VideoWithPlaceholder';
+import dashboardImage from '../assets/dashboard-screenshot.png';
 
 // Define interface for our form data
 interface EmailFormData {
@@ -203,7 +203,7 @@ const Landing: React.FC = () => {
                   <div className="w-full h-full relative">
                     {/* Dashboard screenshot */}
                     <img 
-                      src="/dashboard-screenshot.png" 
+                      src={dashboardImage} 
                       alt="TradeSnap Dashboard" 
                       className="w-full h-full object-contain rounded-lg"
                     />
