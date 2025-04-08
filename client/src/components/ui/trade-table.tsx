@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, Trash } from 'lucide-react';
+import { getDateKey } from '@/lib/date-utils';
 
 interface TradeTableProps {
   trades: Trade[];
@@ -108,7 +109,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                   </TableCell>
                 )}
                 <TableCell className="whitespace-nowrap">
-                  {format(new Date(trade.date), 'yyyy-MM-dd')}
+                  {getDateKey(trade.date)}
                 </TableCell>
                 <TableCell className="font-medium whitespace-nowrap">
                   {trade.symbol}

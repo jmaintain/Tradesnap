@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Trade } from '@shared/schema';
 import { DayProps } from 'react-day-picker';
+import { getDateKey } from '@/lib/date-utils';
 
 interface JournalEntry {
   id: number;
@@ -44,8 +45,8 @@ const JournalPage = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Format date as yyyy-MM-dd
-  const formattedDate = format(date, 'yyyy-MM-dd');
+  // Format date as yyyy-MM-dd using our consistent date utility
+  const formattedDate = getDateKey(date);
 
   // Query for journal entries on selected date
   const { data: journalEntries = [] } = useQuery({
@@ -67,11 +68,11 @@ const JournalPage = () => {
     queryFn: getQueryFn<Trade[]>({ on401: 'returnNull' }),
   });
 
-  // Filter trades for selected date using format comparison instead of direct date objects
+  // Filter trades for selected date using our consistent date utility
   const tradesForSelectedDate = allTrades.filter(trade => {
-    // Use the same format method for both dates to ensure consistent comparison
-    const tradeDateStr = format(new Date(trade.date), 'yyyy-MM-dd');
-    const selectedDateStr = format(date, 'yyyy-MM-dd');
+    // Use the getDateKey function for consistent date comparison
+    const tradeDateStr = getDateKey(trade.date);
+    const selectedDateStr = getDateKey(date);
     return tradeDateStr === selectedDateStr;
   });
 
@@ -167,9 +168,9 @@ const JournalPage = () => {
     allTrades.forEach(trade => {
       if (trade.date) {
         try {
-          const tradeDate = new Date(trade.date);
-          const formattedDate = format(tradeDate, 'yyyy-MM-dd');
-          tradeDates[formattedDate] = true;
+          // Use our consistent date handling utility
+          const dateKey = getDateKey(trade.date);
+          tradeDates[dateKey] = true;
         } catch (e) {
           // Ignore invalid dates
         }
@@ -188,12 +189,12 @@ const JournalPage = () => {
       const dateAttr = dayElement.getAttribute('aria-label');
       if (dateAttr) {
         try {
-          // Try to parse the date from the aria-label
+          // Try to parse the date from the aria-label and use our consistent date key
           const dayDate = new Date(dateAttr);
-          const formattedDate = format(dayDate, 'yyyy-MM-dd');
+          const dateKey = getDateKey(dayDate);
           
           // If this day has trades, add an indicator
-          if (getTradeDates[formattedDate]) {
+          if (getTradeDates[dateKey]) {
             const indicator = document.createElement('div');
             indicator.className = 'absolute bottom-1 right-1 h-1 w-1 rounded-full bg-green-500';
             dayElement.appendChild(indicator);
