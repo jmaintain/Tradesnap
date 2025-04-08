@@ -336,7 +336,7 @@ const Landing: React.FC = () => {
             </div>
             <div className="text-center">
               <div className="text-gray-300 text-sm mb-1">
-                Made with <span className="text-red-500">❤</span> & A Black Owned Business
+                Made with <span className="text-red-500">❤</span> A Black-Owned Business
               </div>
               <div className="text-gray-400 text-sm">
                 © {new Date().getFullYear()} TradeSnap. All rights reserved.
