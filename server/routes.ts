@@ -620,7 +620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <body>
               <h1 class="error">Verification Failed</h1>
               <p>Invalid verification link. Please try again.</p>
-              <a href="/landing">Return to homepage</a>
+              <a href="/">Return to homepage</a>
             </body>
           </html>
         `);
@@ -641,7 +641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <body>
               <h1 class="error">Verification Failed</h1>
               <p>The verification link is invalid or has expired.</p>
-              <a href="/landing">Return to homepage</a>
+              <a href="/">Return to homepage</a>
             </body>
           </html>
         `);
@@ -710,7 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <body>
             <h1 class="error">Verification Failed</h1>
             <p>An error occurred during verification. Please try again.</p>
-            <a href="/landing">Return to homepage</a>
+            <a href="/">Return to homepage</a>
           </body>
         </html>
       `);

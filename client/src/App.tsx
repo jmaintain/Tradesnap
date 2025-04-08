@@ -39,19 +39,12 @@ function AuthHandler() {
   
   useEffect(() => {
     const checkVerification = async () => {
-      // If we're already on the landing page, don't redirect
-      if (window.location.pathname === '/landing') {
-        setIsVerifying(false);
-        return;
-      }
-      
       try {
         // Check for stored email in local storage
         const email = localStorage.getItem('userEmail');
         
-        // If no email is stored, redirect to landing
+        // If no email is stored, user is not verified
         if (!email) {
-          setLocation('/landing');
           setIsVerifying(false);
           return;
         }
@@ -63,14 +56,9 @@ function AuthHandler() {
         
         if (response.verified) {
           setIsVerified(true);
-        } else {
-          // Not verified, redirect to landing
-          setLocation('/landing');
         }
       } catch (error) {
         console.error('Failed to verify email status:', error);
-        // On error, redirect to landing
-        setLocation('/landing');
       } finally {
         setIsVerifying(false);
       }
@@ -102,13 +90,8 @@ function Router({ isVerified }: { isVerified: boolean }) {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  // Show landing page at /landing route
-  if (location === "/landing") {
-    return <Landing />;
-  }
-  
-  // If not verified and not on landing page, user shouldn't access the app
-  if (!isVerified && location !== "/landing") {
+  // Show landing page at / or /landing routes if not verified
+  if (!isVerified) {
     return <Landing />;
   }
 
