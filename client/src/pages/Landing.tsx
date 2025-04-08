@@ -7,6 +7,7 @@ import { ArrowRight, BarChart2, LineChart, Mail, PieChart, ShieldCheck, Zap, Hea
 import { apiRequestAdapter } from '@/lib/apiAdapter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useLocation } from 'wouter';
+import VideoWithPlaceholder from '@/components/VideoWithPlaceholder';
 
 // Define interface for our form data
 interface EmailFormData {
@@ -198,22 +199,11 @@ const Landing: React.FC = () => {
             </div>
             <div className="hidden md:block">
               <div className="relative h-96 w-full">
-                <div className="absolute inset-0 rounded-lg overflow-hidden border border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-                  {/* Use an iframe to display the animation */}
-                  <iframe
-                    src="/trade-animation.html"
-                    title="Trading Animation"
-                    className="w-full h-full border-0"
-                    style={{ borderRadius: 'inherit' }}
-                  ></iframe>
-                  
-                  {/* Logo overlay for branding */}
-                  <div className="absolute bottom-4 right-4 bg-white bg-opacity-80 rounded-full p-2 shadow-md">
-                    <Logo size="sm" />
-                  </div>
-                  
-                  {/* Light overlay to enhance text visibility if needed */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-100/10 to-purple-100/10 pointer-events-none"></div>
+                <div className="absolute inset-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                  <VideoWithPlaceholder 
+                    src="/TradeSnap-Demo-vid.mov" 
+                    type="video/quicktime"
+                  />
                 </div>
               </div>
             </div>
