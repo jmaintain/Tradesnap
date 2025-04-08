@@ -355,50 +355,16 @@ const PerformanceTimeline: React.FC<PerformanceTimelineProps> = ({ trades }) => 
       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <CardTitle>Performance Timeline</CardTitle>
         <div className="flex flex-wrap items-center gap-2">
-          <TabsList>
-            <TabsTrigger 
-              value="1W" 
-              onClick={() => setTimeFrame('1W')} 
-              className={timeFrame === '1W' ? 'bg-blue-100' : ''}
-            >
-              1W
-            </TabsTrigger>
-            <TabsTrigger 
-              value="1M" 
-              onClick={() => setTimeFrame('1M')} 
-              className={timeFrame === '1M' ? 'bg-blue-100' : ''}
-            >
-              1M
-            </TabsTrigger>
-            <TabsTrigger 
-              value="3M" 
-              onClick={() => setTimeFrame('3M')} 
-              className={timeFrame === '3M' ? 'bg-blue-100' : ''}
-            >
-              3M
-            </TabsTrigger>
-            <TabsTrigger 
-              value="6M" 
-              onClick={() => setTimeFrame('6M')} 
-              className={timeFrame === '6M' ? 'bg-blue-100' : ''}
-            >
-              6M
-            </TabsTrigger>
-            <TabsTrigger 
-              value="1Y" 
-              onClick={() => setTimeFrame('1Y')} 
-              className={timeFrame === '1Y' ? 'bg-blue-100' : ''}
-            >
-              1Y
-            </TabsTrigger>
-            <TabsTrigger 
-              value="ALL" 
-              onClick={() => setTimeFrame('ALL')} 
-              className={timeFrame === 'ALL' ? 'bg-blue-100' : ''}
-            >
-              ALL
-            </TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
+            <TabsList>
+              <TabsTrigger value="1W">1W</TabsTrigger>
+              <TabsTrigger value="1M">1M</TabsTrigger>
+              <TabsTrigger value="3M">3M</TabsTrigger>
+              <TabsTrigger value="6M">6M</TabsTrigger>
+              <TabsTrigger value="1Y">1Y</TabsTrigger>
+              <TabsTrigger value="ALL">ALL</TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           <div className="flex items-center gap-2 ml-2">
             <Button 
