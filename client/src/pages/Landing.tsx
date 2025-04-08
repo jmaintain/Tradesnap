@@ -15,9 +15,11 @@ interface EmailFormData {
 
 // Response from the server
 interface SubscribeResponse {
-  email: string;
-  status: string;
+  email?: string;
+  status?: string;
   message: string;
+  verificationToken?: string;
+  isDevelopment?: boolean;  // Added for development mode detection
 }
 
 const Landing: React.FC = () => {
@@ -58,11 +60,23 @@ const Landing: React.FC = () => {
         body: JSON.stringify({ email }),
       });
       
-      if (response.status === 'active') {
-        // Save verified email in localStorage
-        localStorage.setItem('userEmail', email);
+      // Save email in localStorage in all cases
+      localStorage.setItem('userEmail', email);
+      
+      // Check for development mode auto-verification
+      if (response.isDevelopment || response.message?.includes('DEV MODE')) {
+        toast({
+          title: 'Development Mode',
+          description: 'Email automatically verified for testing',
+        });
         
-        // Already verified
+        // Redirect to app after a short delay
+        setTimeout(() => {
+          setLocation('/');
+        }, 2000);
+      }
+      // Check if already verified
+      else if (response.status === 'active') {
         toast({
           title: 'Welcome back!',
           description: 'Your email is already verified. You can access the application.',
@@ -72,11 +86,9 @@ const Landing: React.FC = () => {
         setTimeout(() => {
           setLocation('/');
         }, 2000);
-      } else {
-        // Save email in localStorage even when pending
-        localStorage.setItem('userEmail', email);
-        
-        // Verification email sent
+      } 
+      // Standard verification email sent case
+      else {
         toast({
           title: 'Verification email sent!',
           description: 'Please check your inbox and click the verification link.',
