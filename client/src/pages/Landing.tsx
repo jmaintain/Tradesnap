@@ -137,6 +137,9 @@ const Landing: React.FC = () => {
               <p className="mt-4 text-lg text-gray-600 max-w-2xl">
                 TradeSnap is your personal trading journal where you manually record your trades, track performance, trading mood, and make data-driven decisions to improve your trading strategy.
               </p>
+              <div className="mt-2 inline-block bg-amber-100 border border-amber-300 rounded-full px-3 py-1 text-sm font-medium text-amber-800">
+                For Futures Trading Only
+              </div>
               
               {isRedirecting && (
                 <Alert className="mt-6 border-green-200 bg-green-50">
