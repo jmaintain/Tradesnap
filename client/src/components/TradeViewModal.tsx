@@ -222,10 +222,10 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto p-0">
-          <div className="p-6">
+        <DialogContent className="sm:max-w-[900px] w-[95vw] max-h-[90vh] overflow-y-auto p-0">
+          <div className="p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold">Trade Calendar</DialogTitle>
+              <DialogTitle className="text-xl sm:text-2xl font-bold">Trade Calendar</DialogTitle>
               <DialogDescription>
                 Select a date to view trade details
               </DialogDescription>
@@ -233,10 +233,10 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
           </div>
 
           {/* Full width custom calendar */}
-          <div className="bg-purple-50 p-6 border-t border-b border-purple-100">
+          <div className="bg-purple-50 p-3 sm:p-6 border-t border-b border-purple-100">
             {/* Month navigation */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-purple-800">
+              <h2 className="text-lg sm:text-2xl font-bold text-purple-800">
                 {format(currentMonth, 'MMMM yyyy')}
               </h2>
               <div className="flex gap-2">
@@ -244,21 +244,21 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                   onClick={goToPreviousMonth}
                   className="p-1 rounded-full hover:bg-purple-200 transition-colors"
                 >
-                  <ChevronLeft className="h-6 w-6 text-purple-800" />
+                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-purple-800" />
                 </button>
                 <button 
                   onClick={goToNextMonth}
                   className="p-1 rounded-full hover:bg-purple-200 transition-colors"
                 >
-                  <ChevronRight className="h-6 w-6 text-purple-800" />
+                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-purple-800" />
                 </button>
               </div>
             </div>
 
             {/* Calendar header - days of week */}
             <div className="grid grid-cols-7 gap-1 mb-2">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center font-medium py-2">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                <div key={index} className="text-center font-medium py-1 sm:py-2 text-xs sm:text-sm">
                   {day}
                 </div>
               ))}
@@ -281,9 +281,9 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                   return (
                     <div
                       key={dateKey}
-                      className="p-2 h-32 bg-gray-50 rounded-lg text-left relative overflow-hidden opacity-30"
+                      className="p-1 sm:p-2 h-16 sm:h-28 md:h-32 bg-gray-50 rounded-lg text-left relative overflow-hidden opacity-30"
                     >
-                      <div className="font-medium text-gray-400">{format(day, 'd')}</div>
+                      <div className="font-medium text-xs sm:text-base text-gray-400">{format(day, 'd')}</div>
                     </div>
                   );
                 }
@@ -292,29 +292,29 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                   <button
                     key={dateKey}
                     className={cn(
-                      "p-2 h-32 rounded-lg transition-colors text-left relative overflow-hidden",
+                      "p-1 sm:p-2 h-16 sm:h-28 md:h-32 rounded-lg transition-colors text-left relative overflow-hidden",
                       hasData 
                         ? isProfitable 
                           ? "bg-green-200 hover:bg-green-300" 
                           : "bg-red-200 hover:bg-red-300"
                         : "bg-gray-100 hover:bg-gray-200",
-                      isSelected && "ring-2 ring-offset-2 ring-blue-500",
+                      isSelected && "ring-2 ring-offset-1 sm:ring-offset-2 ring-blue-500",
                       isSelected && isProfitable && "ring-green-600",
                       isSelected && hasData && !isProfitable && "ring-red-600"
                     )}
                     onClick={() => handleDateSelect(day)}
                   >
-                    <div className="font-bold text-lg">{format(day, 'd')}</div>
+                    <div className="font-bold text-sm sm:text-lg">{format(day, 'd')}</div>
                     
                     {hasData && (
                       <>
                         <div className={cn(
-                          "font-bold text-lg",
+                          "font-bold text-xs sm:text-sm md:text-lg",
                           isProfitable ? "text-green-800" : "text-red-800"
                         )}>
                           {isProfitable ? '+' : ''}${Math.abs(dayData.total).toFixed(2)}
                         </div>
-                        <div className="text-sm mt-1">
+                        <div className="text-xs sm:text-sm mt-0 sm:mt-1">
                           {dayData.count} {dayData.count === 1 ? 'trade' : 'trades'}
                         </div>
                       </>
@@ -327,13 +327,13 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
           
           {/* Selected day's trades */}
           {selectedDate && selectedTrades.length > 0 && (
-            <ScrollArea className="p-6 max-h-[40vh]">
-              <div className="space-y-6">
+            <ScrollArea className="p-4 sm:p-6 max-h-[40vh]">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="text-xl font-bold mb-2">
+                  <h3 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2">
                     Trades on {format(selectedDate, 'MMMM d, yyyy')}
                   </h3>
-                  <p className="text-gray-500">
+                  <p className="text-sm text-gray-500">
                     {selectedTrades.length} {selectedTrades.length === 1 ? 'trade' : 'trades'} executed
                   </p>
                 </div>
@@ -345,14 +345,14 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                   return (
                     <Card key={trade.id} className="border-l-4 overflow-hidden shadow-sm" 
                       style={{ borderLeftColor: isProfitable ? '#22c55e' : '#ef4444' }}>
-                      <CardHeader className="py-4">
-                        <div className="flex justify-between items-center">
-                          <CardTitle className="flex items-center gap-2">
+                      <CardHeader className="p-3 sm:py-4">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                             {trade.symbol}{' '}
                             <Badge
                               variant="outline"
                               className={cn(
-                                'font-medium capitalize',
+                                'font-medium capitalize text-xs',
                                 trade.tradeType === 'long'
                                   ? 'bg-green-100 text-green-800 border-green-200'
                                   : 'bg-red-100 text-red-800 border-red-200'
@@ -361,40 +361,40 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                               {trade.tradeType}
                             </Badge>
                           </CardTitle>
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 sm:gap-4">
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="flex items-center gap-1"
+                              className="flex items-center gap-1 px-2 h-8 text-xs sm:text-sm"
                               onClick={() => handleEditTrade(trade)}
                             >
-                              <Edit className="h-4 w-4" />
-                              Edit
+                              <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                              <span className="sm:block">Edit</span>
                             </Button>
                             <div className={cn(
-                              "text-lg font-bold",
+                              "text-base sm:text-lg font-bold",
                               isProfitable ? "text-green-600" : "text-red-600"
                             )}>
                               {isProfitable ? '+' : ''}${Math.abs(parseFloat(trade.pnlDollars || '0')).toFixed(2)}
                             </div>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-2">
                           <div>
                             <p className="text-xs text-gray-500">Quantity</p>
-                            <p className="font-medium">{trade.quantity}</p>
+                            <p className="font-medium text-sm sm:text-base">{trade.quantity}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">Entry</p>
-                            <p className="font-medium">{trade.entryPrice}</p>
+                            <p className="font-medium text-sm sm:text-base">{trade.entryPrice}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">Exit</p>
-                            <p className="font-medium">{trade.exitPrice}</p>
+                            <p className="font-medium text-sm sm:text-base">{trade.exitPrice}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">P&L (Points)</p>
-                            <p className={cn("font-medium", isProfitable ? "text-green-600" : "text-red-600")}>
+                            <p className={cn("font-medium text-sm sm:text-base", isProfitable ? "text-green-600" : "text-red-600")}>
                               {isProfitable ? '+' : ''}{trade.pnlPoints}
                             </p>
                           </div>
@@ -403,32 +403,32 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
 
                       {/* Trade Notes & Screenshots */}
                       {(trade.notes || (trade.screenshots && trade.screenshots.length > 0)) && (
-                        <CardContent>
+                        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                           <Tabs defaultValue="notes" className="w-full">
                             <TabsList className="grid w-full grid-cols-2">
-                              <TabsTrigger value="notes" className="flex items-center gap-2">
-                                <PenTool className="h-4 w-4" />
+                              <TabsTrigger value="notes" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-1">
+                                <PenTool className="h-3 w-3 sm:h-4 sm:w-4" />
                                 Notes
                               </TabsTrigger>
-                              <TabsTrigger value="screenshots" className="flex items-center gap-2">
-                                <Image className="h-4 w-4" />
+                              <TabsTrigger value="screenshots" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-1">
+                                <Image className="h-3 w-3 sm:h-4 sm:w-4" />
                                 Screenshots
                               </TabsTrigger>
                             </TabsList>
                             
-                            <TabsContent value="notes" className="mt-4">
+                            <TabsContent value="notes" className="mt-3 sm:mt-4">
                               {trade.notes ? (
-                                <div className="whitespace-pre-wrap text-gray-700 border rounded-md p-4 bg-gray-50">
+                                <div className="whitespace-pre-wrap text-gray-700 border rounded-md p-3 sm:p-4 bg-gray-50 text-xs sm:text-sm">
                                   {trade.notes}
                                 </div>
                               ) : (
-                                <div className="text-gray-500 italic">No notes available for this trade.</div>
+                                <div className="text-gray-500 italic text-xs sm:text-sm">No notes available for this trade.</div>
                               )}
                             </TabsContent>
                             
-                            <TabsContent value="screenshots" className="mt-4">
+                            <TabsContent value="screenshots" className="mt-3 sm:mt-4">
                               {trade.screenshots && trade.screenshots.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                                   {trade.screenshots.map((screenshot, index) => {
                                     const imageSrc = screenshot.startsWith('data:') 
                                       ? screenshot 
@@ -447,17 +447,17 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                                         <Button 
                                           size="sm" 
                                           variant="ghost" 
-                                          className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                          className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full p-1 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                                           onClick={() => handleViewImage(imageSrc)}
                                         >
-                                          <Maximize2 className="h-4 w-4" />
+                                          <Maximize2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                         </Button>
                                       </div>
                                     );
                                   })}
                                 </div>
                               ) : (
-                                <div className="text-gray-500 italic">No screenshots available for this trade.</div>
+                                <div className="text-gray-500 italic text-xs sm:text-sm">No screenshots available for this trade.</div>
                               )}
                             </TabsContent>
                           </Tabs>

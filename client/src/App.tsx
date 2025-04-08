@@ -10,7 +10,17 @@ import Analytics from "@/pages/Analytics";
 import Settings from "@/pages/Settings";
 import Journal from "@/pages/Journal";
 import Landing from "@/pages/Landing";
-import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Menu, 
+  X, 
+  BarChart3, 
+  ClipboardList, 
+  BookOpen, 
+  PieChart, 
+  Settings as SettingsIcon 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { StorageProvider } from "@/lib/indexedDB/StorageContext";
@@ -126,19 +136,34 @@ function Router({ isVerified }: { isVerified: boolean }) {
             </div>
             <div className="flex-1 h-0 overflow-y-auto">
               <nav className="px-2 space-y-1">
-                <a href="/" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-white bg-gray-900">
+                <a href="/" className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${location === '/' ? 'text-white bg-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
+                  <div className={`mr-3 ${location === '/' ? 'text-gray-300' : 'text-gray-400'}`}>
+                    <BarChart3 className="h-6 w-6" />
+                  </div>
                   Dashboard
                 </a>
-                <a href="/trades" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
+                <a href="/trades" className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${location === '/trades' ? 'text-white bg-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
+                  <div className={`mr-3 ${location === '/trades' ? 'text-gray-300' : 'text-gray-400'}`}>
+                    <ClipboardList className="h-6 w-6" />
+                  </div>
                   Trades
                 </a>
-                <a href="/journal" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
+                <a href="/journal" className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${location === '/journal' ? 'text-white bg-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
+                  <div className={`mr-3 ${location === '/journal' ? 'text-gray-300' : 'text-gray-400'}`}>
+                    <BookOpen className="h-6 w-6" />
+                  </div>
                   Journal
                 </a>
-                <a href="/analytics" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
+                <a href="/analytics" className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${location === '/analytics' ? 'text-white bg-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
+                  <div className={`mr-3 ${location === '/analytics' ? 'text-gray-300' : 'text-gray-400'}`}>
+                    <PieChart className="h-6 w-6" />
+                  </div>
                   Analytics
                 </a>
-                <a href="/settings" className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700 hover:text-white">
+                <a href="/settings" className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${location === '/settings' ? 'text-white bg-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
+                  <div className={`mr-3 ${location === '/settings' ? 'text-gray-300' : 'text-gray-400'}`}>
+                    <SettingsIconWrapper className="h-6 w-6" />
+                  </div>
                   Settings
                 </a>
               </nav>
@@ -200,6 +225,11 @@ const Mail = ({ className }: { className?: string }) => (
     <rect width="20" height="16" x="2" y="4" rx="2" />
     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
   </svg>
+);
+
+// Wrapper for the Settings icon to fix type errors
+const SettingsIconWrapper = ({ className }: { className?: string }) => (
+  <SettingsIcon className={className} />
 );
 
 function App() {

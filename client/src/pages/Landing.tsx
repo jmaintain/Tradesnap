@@ -167,7 +167,7 @@ const Landing: React.FC = () => {
                     className="mt-3 sm:mt-0 w-full sm:w-auto rounded-l-none font-medium"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? 'Submitting...' : 'Join Waitlist'}
+                    {isSubmitting ? 'Submitting...' : 'Start TradeSnap'}
                     {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
                   </Button>
                 </form>
@@ -289,7 +289,7 @@ const Landing: React.FC = () => {
                 className="mt-3 sm:mt-0 w-full sm:w-auto rounded-l-none shadow-sm font-medium"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Submitting...' : 'Get Early Access'}
+                {isSubmitting ? 'Submitting...' : 'Start TradeSnap'}
               </Button>
             </form>
           </div>

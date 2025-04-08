@@ -47,21 +47,21 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ imageSrc, onClose }) => {
       aria-modal="true"
     >
       <div 
-        className="relative max-h-[90vh] max-w-[90vw] overflow-auto" 
+        className="relative max-h-[90vh] max-w-[95vw] sm:max-w-[90vw] overflow-auto" 
         onClick={handleContentClick}
       >
         <Button 
           variant="ghost" 
           size="icon"
-          className="absolute top-2 right-2 bg-white/20 hover:bg-white/40 rounded-full z-10"
+          className="absolute top-2 right-2 bg-black/40 hover:bg-black/60 rounded-full z-10"
           onClick={handleClose}
         >
-          <X className="h-6 w-6 text-white" />
+          <X className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
         </Button>
         <img 
           src={imageSrc} 
           alt="Enlarged screenshot" 
-          className="max-h-[90vh] max-w-[90vw] object-contain"
+          className="max-h-[85vh] max-w-[95vw] sm:max-w-[90vw] object-contain bg-white/5 backdrop-blur-sm rounded-lg shadow-xl"
         />
       </div>
     </div>,
