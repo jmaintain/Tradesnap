@@ -203,7 +203,7 @@ const Landing: React.FC = () => {
                   <div className="w-full h-full relative">
                     {/* Dashboard screenshot */}
                     <img 
-                      src="/assets/dashboard-screenshot.png" 
+                      src="/dashboard-screenshot.png" 
                       alt="TradeSnap Dashboard" 
                       className="w-full h-full object-cover rounded-lg"
                     />
