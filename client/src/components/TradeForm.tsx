@@ -147,6 +147,16 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
     queryKey: ['/api/instruments'],
   });
 
+  // Fetch user settings for default instrument
+  const { data: settings } = useQuery<{
+    defaultInstrument?: string;
+    theme?: string;
+    userId?: number;
+  }>({
+    queryKey: ['/api/settings']
+  });
+
+  // Use the settings to initialize the form with the default instrument
   const form = useForm<TradeFormValues>({
     resolver: zodResolver(tradeFormSchema),
     defaultValues: {
@@ -157,8 +167,15 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
       exitPrice: '',
       date: normalizeDate(new Date()),
       notes: '',
-    },
+    }
   });
+
+  // Update the symbol field with the default instrument when settings are loaded
+  useEffect(() => {
+    if (settings?.defaultInstrument) {
+      form.setValue('symbol', settings.defaultInstrument);
+    }
+  }, [settings, form]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -369,7 +386,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
                 <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Symbol</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -397,7 +414,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
                 <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Type</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>

@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { insertTradeSchema, Trade, JournalEntry } from '@shared/schema';
+import { insertTradeSchema, insertJournalEntrySchema } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { processImageFile } from '@/lib/imageCompression';
-import { useStorage } from '@/lib/indexedDB/StorageContext';
 import { apiRequestAdapter } from '@/lib/apiAdapter';
+import { useStorage } from '@/lib/indexedDB/StorageContext';
 
 import {
   Form,
@@ -28,20 +28,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { 
+import { UploadCloud, BookOpen } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { BookOpen, UploadCloud, X } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
+} from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
-// We need to define the date handling functions first, before using them in the schema
-
+// Function to handle date conversion to avoid timezone issues
 // Function to handle date conversion for trade date
 const normalizeDate = (dateString: string | Date): Date => {
   // Extract date components from the input
@@ -128,141 +127,73 @@ const tradeFormSchema = insertTradeSchema.extend({
 
 type TradeFormValues = z.infer<typeof tradeFormSchema>;
 
-interface EditTradeFormProps {
-  trade: Trade;
+interface TradeFormProps {
   onSubmitSuccess?: () => void;
   onCancel?: () => void;
 }
 
-const EditTradeForm: React.FC<EditTradeFormProps> = ({ 
-  trade, 
-  onSubmitSuccess, 
-  onCancel 
-}) => {
+const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { refreshStorageInfo } = useStorage();
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [existingScreenshots, setExistingScreenshots] = useState<string[]>(
-    trade.screenshots ? 
-      (Array.isArray(trade.screenshots) ? trade.screenshots : [trade.screenshots]).filter(Boolean) : 
-      []
-  );
-  
-  // Journal entry states
-  const [includeJournal, setIncludeJournal] = useState(false);
-  const [journalContent, setJournalContent] = useState("");
-  const [journalMood, setJournalMood] = useState("neutral");
-  const [existingJournalEntry, setExistingJournalEntry] = useState<JournalEntry | null>(null);
+  const [journalContent, setJournalContent] = useState<string>('');
+  const [journalMood, setJournalMood] = useState<string>('neutral');
+  const [includeJournal, setIncludeJournal] = useState<boolean>(false);
 
   // Fetch instruments for the dropdown
   const { data: instruments = [] } = useQuery({
     queryKey: ['/api/instruments'],
   });
-  
-  // Function to fetch journal entries for a specific date
-  const fetchJournalEntriesForDate = async (date: Date) => {
-    try {
-      // Normalize the date to avoid timezone issues
-      const normalizedDate = normalizeDate(date);
-      const dateStr = format(normalizedDate, 'yyyy-MM-dd');
-      const journalEntries = await apiRequestAdapter<JournalEntry[]>(`/api/journal/date/${dateStr}`);
-      return journalEntries;
-    } catch (error) {
-      console.error('Error fetching journal entries:', error);
-      return [];
-    }
-  };
 
-  // We now use the functions defined at the top of the file
+  // Fetch user settings for default instrument
+  const { data: settings } = useQuery<{
+    defaultInstrument?: string;
+    theme?: string;
+    userId?: number;
+  }>({
+    queryKey: ['/api/settings']
+  });
 
-  // Log the date we're initializing with for debugging
-  console.log('Trade date from server:', trade.date);
-  const initialDate = processTradeDate(trade.date);
-  console.log('Initial date for form:', initialDate);
-
-  // Initialize the form with existing trade data
+  // Use the settings to initialize the form with the default instrument
   const form = useForm<TradeFormValues>({
     resolver: zodResolver(tradeFormSchema),
     defaultValues: {
-      symbol: trade.symbol || '',
-      tradeType: trade.tradeType || 'long',
-      quantity: trade.quantity || 1,
-      entryPrice: trade.entryPrice || '',
-      exitPrice: trade.exitPrice || '',
-      date: initialDate,
-      notes: trade.notes || '',
-    },
+      symbol: '',
+      tradeType: 'long',
+      quantity: 1,
+      entryPrice: '',
+      exitPrice: '',
+      date: normalizeDate(new Date()),
+      notes: '',
+    }
   });
+
+  // Update the symbol field with the default instrument when settings are loaded
+  useEffect(() => {
+    if (settings?.defaultInstrument) {
+      form.setValue('symbol', settings.defaultInstrument);
+    }
+  }, [settings, form]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      // Calculate how many more files can be added
-      const maxNewFiles = 2 - existingScreenshots.length;
-      
-      if (maxNewFiles <= 0) {
-        toast({
-          variant: "destructive",
-          title: "Maximum screenshots reached",
-          description: "Please remove an existing screenshot first before adding a new one"
-        });
-        return;
-      }
-      
       const selectedFiles = Array.from(e.target.files);
-      if (selectedFiles.length > maxNewFiles) {
+      if (selectedFiles.length > 2) {
         toast({
           variant: "destructive",
           title: "Too many files",
-          description: `You can only add ${maxNewFiles} more screenshot${maxNewFiles === 1 ? '' : 's'}`
+          description: "Maximum of 2 screenshots allowed"
         });
         return;
       }
-      
       setFiles(selectedFiles);
     }
   };
 
-  const handleRemoveExistingScreenshot = (index: number) => {
-    setExistingScreenshots(prev => prev.filter((_, i) => i !== index));
-  };
-  
-  // Effect to load journal entries when the date changes
-  useEffect(() => {
-    if (trade.date) {
-      const loadJournalEntries = async () => {
-        try {
-          // Use the same processTradeDate to handle the date properly
-          const date = processTradeDate(trade.date);
-          console.log('Loading journal entries for date:', date);
-          const entries = await fetchJournalEntriesForDate(date);
-          
-          if (entries.length > 0) {
-            // Set the first entry as the existing journal entry
-            setExistingJournalEntry(entries[0]);
-            setJournalContent(entries[0].content || "");
-            setJournalMood(entries[0].mood || "neutral");
-          } else {
-            setExistingJournalEntry(null);
-            setJournalContent("");
-            setJournalMood("neutral");
-          }
-        } catch (error) {
-          console.error("Error loading journal entries:", error);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Failed to load journal entries",
-          });
-        }
-      };
-      
-      loadJournalEntries();
-    }
-  }, [trade.date, toast]);
-
   const onSubmit = async (data: TradeFormValues) => {
+    // Use try-catch to handle any form validation errors that might occur
     try {
       setIsSubmitting(true);
       
@@ -272,20 +203,19 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       // Add all form fields to FormData
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'date') {
-          // Ensure we use a normalized date to avoid timezone issues
-          const normalizedDate = normalizeDate(value);
+          // Make sure we're using the normalized date without timezone issues
+          // This ensures the exact date selected by the user is used
+          const selectedDate = value as Date;
+          // Apply normalization to ensure consistency with date handling across the app
+          const normalizedDate = normalizeDate(selectedDate);
+          console.log('Submitting date:', normalizedDate);
           formData.append(key, format(normalizedDate, 'yyyy-MM-dd'));
         } else if (value !== undefined && value !== null) {
           formData.append(key, value.toString());
         }
       });
       
-      // Add existing screenshots that were not removed
-      if (existingScreenshots.length > 0) {
-        formData.append('existingScreenshots', JSON.stringify(existingScreenshots));
-      }
-      
-      // Process and compress new images before adding them to FormData
+      // Process and compress images before adding them to FormData
       if (files.length > 0) {
         // Show a toast message to indicate compression is happening
         toast({
@@ -296,7 +226,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
         // Process each file individually
         for (const file of files) {
           try {
-            // If it's an image file, compress it
+            // If it's an image file, compress it to approximately 100KB
             if (file.type.startsWith('image/')) {
               const compressedImageDataUrl = await processImageFile(file, 100);
               
@@ -326,81 +256,71 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
         }
       }
       
-      // Custom fetch with FormData to update the trade
-      const response = await fetch(`/api/trades/${trade.id}`, {
-        method: 'PUT',
+      // Custom fetch with FormData
+      const response = await fetch('/api/trades', {
+        method: 'POST',
         body: formData,
         credentials: 'include',
       });
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update trade');
+        throw new Error(errorData.message || 'Failed to save trade');
       }
       
-      // Process journal entry if included
-      if (includeJournal && data.date) {
+      // Create journal entry if include journal is checked
+      if (includeJournal && journalContent.trim()) {
         try {
-          // Use normalized date for journal entry
-          const normalizedDate = normalizeDate(data.date);
-          const dateStr = format(normalizedDate, 'yyyy-MM-dd');
-          
-          if (existingJournalEntry) {
-            // Update existing journal entry
-            await apiRequestAdapter(`/api/journal/${existingJournalEntry.id}`, {
-              method: 'PUT',
-              body: JSON.stringify({
-                content: journalContent,
-                mood: journalMood,
-                date: dateStr,
-                userId: 1 // Default userId for demo
-              }),
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            });
-          } else {
-            // Create new journal entry
-            await apiRequestAdapter(`/api/journal`, {
-              method: 'POST',
-              body: JSON.stringify({
-                content: journalContent,
-                mood: journalMood,
-                date: dateStr,
-                userId: 1 // Default userId for demo
-              }),
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            });
-          }
+          // Use the same date format as the trade
+          const selectedDate = data.date as Date;
+          // Ensure the date is normalized to avoid timezone issues
+          const normalizedDate = normalizeDate(selectedDate);
+          await apiRequestAdapter('/api/journal', {
+            method: 'POST',
+            body: JSON.stringify({
+              content: journalContent,
+              date: format(normalizedDate, 'yyyy-MM-dd'),
+              mood: journalMood
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
           
           // Invalidate journal queries
           queryClient.invalidateQueries({ queryKey: ['/api/journal'] });
+          
+          // Format date for the journal date query cache invalidation
+          // Use normalized date to ensure consistency
+          const dateForQuery = format(normalizedDate, 'yyyy-MM-dd');
+          queryClient.invalidateQueries({ queryKey: ['/api/journal/date', dateForQuery] });
+          
+          toast({
+            title: "Trade and Journal Created",
+            description: "Your trade and journal entry have been successfully recorded.",
+          });
         } catch (error) {
-          console.error('Error saving journal entry:', error);
+          console.error('Error creating journal entry:', error);
           toast({
             variant: "destructive",
-            title: "Warning",
-            description: "Trade was updated but there was an error saving the journal entry",
+            title: "Trade Created, Journal Failed",
+            description: "Your trade was saved but the journal entry could not be created.",
           });
         }
+      } else {
+        toast({
+          title: "Trade saved",
+          description: "Your trade has been successfully recorded",
+        });
       }
-      
-      toast({
-        title: "Trade updated",
-        description: includeJournal 
-          ? "Your trade and journal entry have been successfully updated" 
-          : "Your trade has been successfully updated",
-      });
       
       // Invalidate trades query to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
       
       // Refresh storage info to update usage indicators
-      console.log("Refreshing storage info after trade update");
+      console.log("Refreshing storage info after trade creation");
       await refreshStorageInfo();
-      console.log("Storage info refresh completed after update");
+      console.log("Storage info refresh completed");
       
       if (onSubmitSuccess) {
         onSubmitSuccess();
@@ -409,7 +329,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update trade",
+        description: error instanceof Error ? error.message : "Failed to save trade",
       });
     } finally {
       setIsSubmitting(false);
@@ -610,81 +530,42 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
         />
         
         <div>
-          <FormLabel className="block mb-2">Screenshots (Max 2)</FormLabel>
-          
-          {/* Existing Screenshots */}
-          {existingScreenshots.length > 0 && (
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Existing Screenshots:</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {existingScreenshots.map((screenshot, index) => {
-                  const imageSrc = screenshot.startsWith('data:') 
-                    ? screenshot 
-                    : screenshot.startsWith('/uploads/') 
-                      ? screenshot.substring(1) // Remove leading slash
-                      : `/uploads/${screenshot}`;
-                  
-                  return (
-                    <div key={index} className="relative border rounded-lg overflow-hidden group">
-                      <img 
-                        src={imageSrc} 
-                        alt={`Existing screenshot ${index + 1}`} 
-                        className="w-full h-auto object-contain"
-                      />
-                      <Button 
-                        type="button"
-                        size="sm" 
-                        variant="destructive" 
-                        className="absolute top-2 right-2 opacity-70 hover:opacity-100"
-                        onClick={() => handleRemoveExistingScreenshot(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  );
-                })}
+          <FormLabel className="block mb-2">Screenshots (Optional)</FormLabel>
+          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+            <div className="space-y-1 text-center">
+              <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
+              <div className="flex text-sm text-gray-600">
+                <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                  <span>Upload files</span>
+                  <input
+                    id="file-upload"
+                    name="file-upload"
+                    type="file"
+                    className="sr-only"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                </label>
+                <p className="pl-1">or drag and drop</p>
               </div>
-            </div>
-          )}
-          
-          {/* New Screenshots Upload */}
-          {existingScreenshots.length < 2 && (
-            <div className="mt-3 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-              <div className="space-y-1 text-center">
-                <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
-                <div className="flex text-sm text-gray-600">
-                  <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                    <span>Upload files</span>
-                    <input
-                      id="file-upload"
-                      name="file-upload"
-                      type="file"
-                      className="sr-only"
-                      multiple
-                      accept="image/*"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                  <p className="pl-1">or drag and drop</p>
+              <p className="text-xs text-gray-500">
+                PNG, JPG, GIF up to 10MB (max 2 files, compressed to ~100KB each)
+              </p>
+              {files.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">Selected files:</p>
+                  <ul className="list-disc pl-5 text-xs text-gray-500">
+                    {files.map((file, index) => (
+                      <li key={index}>{file.name}</li>
+                    ))}
+                  </ul>
                 </div>
-                <p className="text-xs text-gray-500">
-                  PNG, JPG, GIF up to 10MB ({2 - existingScreenshots.length} slots available, compressed to ~100KB each)
-                </p>
-                {files.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500">Selected files to add:</p>
-                    <ul className="list-disc pl-5 text-xs text-gray-500">
-                      {files.map((file, index) => (
-                        <li key={index}>{file.name}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
-        
+
         <Accordion type="single" collapsible className="mt-4">
           <AccordionItem value="journal">
             <AccordionTrigger>
@@ -699,46 +580,38 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
                   <Checkbox 
                     id="include-journal" 
                     checked={includeJournal}
-                    onCheckedChange={() => setIncludeJournal(!includeJournal)}
+                    onCheckedChange={(checked) => setIncludeJournal(checked === true)}
                   />
-                  <label
-                    htmlFor="include-journal"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Include journal entry with this trade
-                  </label>
+                  <Label htmlFor="include-journal">Create Journal Entry for this Trade</Label>
                 </div>
                 
                 {includeJournal && (
                   <>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="mood" className="text-right">
-                        Mood
-                      </Label>
-                      <Select value={journalMood} onValueChange={setJournalMood}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select your mood" />
+                    <div>
+                      <Label htmlFor="journal-mood" className="block mb-2">Mood</Label>
+                      <Select 
+                        value={journalMood} 
+                        onValueChange={setJournalMood}
+                      >
+                        <SelectTrigger id="journal-mood" className="w-full">
+                          <SelectValue placeholder="Select mood" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="great">Great</SelectItem>
-                          <SelectItem value="good">Good</SelectItem>
-                          <SelectItem value="neutral">Neutral</SelectItem>
-                          <SelectItem value="bad">Bad</SelectItem>
-                          <SelectItem value="terrible">Terrible</SelectItem>
+                          <SelectItem value="positive">Positive 😊</SelectItem>
+                          <SelectItem value="neutral">Neutral 😐</SelectItem>
+                          <SelectItem value="negative">Negative 😔</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid grid-cols-4 items-start gap-4">
-                      <Label htmlFor="journal-content" className="text-right pt-2">
-                        Journal
-                      </Label>
+                    
+                    <div>
+                      <Label htmlFor="journal-content" className="block mb-2">Journal Entry</Label>
                       <Textarea
                         id="journal-content"
                         value={journalContent}
                         onChange={(e) => setJournalContent(e.target.value)}
-                        className="col-span-3"
-                        rows={4}
-                        placeholder="Write your journal entry here..."
+                        className="min-h-[150px]"
+                        placeholder="Describe your thoughts about this trade, market conditions, your psychology, lessons learned..."
                       />
                     </div>
                   </>
@@ -747,30 +620,28 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-
-        <div className="sticky bottom-0 pt-3 mt-4 border-t border-gray-200 bg-white">
-          <div className="flex justify-end space-x-3 py-2">
-            <Button
-              type="button"
-              variant="outline"
+        
+        <div className="flex items-center justify-end space-x-4 pt-4">
+          {onCancel && (
+            <Button 
+              type="button" 
+              variant="outline" 
               onClick={onCancel}
               disabled={isSubmitting}
-              className="px-4"
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4"
-            >
-              {isSubmitting ? 'Saving...' : 'Update Trade'}
-            </Button>
-          </div>
+          )}
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Saving...' : 'Save Trade'}
+          </Button>
         </div>
       </form>
     </Form>
   );
 };
 
-export default EditTradeForm;
+export default TradeForm;
