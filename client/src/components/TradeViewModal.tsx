@@ -38,59 +38,44 @@ import { Trade } from '@shared/schema';
 import ImageViewer from './ImageViewer';
 import EditTradeModal from './EditTradeModal';
 
-// Function to normalize dates and avoid timezone issues
-const normalizeDate = (dateString: string | Date): Date => {
-  // Default to today if input is invalid
-  if (!dateString) {
+/**
+ * Converts a date to a simple YYYY-MM-DD string format
+ * This is used as a consistent key format for date-related operations
+ */
+const getDateKey = (date: Date | string): string => {
+  if (typeof date === 'string') {
+    // If it's already a string, try to normalize it
+    if (date.includes('T')) {
+      // ISO format like "2025-04-03T00:00:00.000Z"
+      // Just take the date part
+      return date.split('T')[0];
+    } else if (date.includes('-') && date.split('-').length === 3) {
+      // Already in YYYY-MM-DD format
+      return date;
+    }
+    
+    // For other string formats, parse to date first
+    const parsedDate = new Date(date);
+    if (!isNaN(parsedDate.getTime())) {
+      const year = parsedDate.getFullYear();
+      const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(parsedDate.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    
+    // If parsing failed, return today's date
     const today = new Date();
-    return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0));
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
   
-  try {
-    // Handle ISO strings using parseISO
-    if (typeof dateString === 'string' && dateString.includes('T')) {
-      // This is an ISO string like '2025-04-03T00:00:00.000Z'
-      const parsedDate = parseISO(dateString);
-      // Extract year, month and day
-      const year = parsedDate.getFullYear();
-      const month = parsedDate.getMonth();
-      const day = parsedDate.getDate();
-      
-      return new Date(Date.UTC(year, month, day, 12, 0, 0));
-    }
-    // Handle YYYY-MM-DD format 
-    else if (typeof dateString === 'string' && dateString.includes('-')) {
-      // If it's a date string in YYYY-MM-DD format from date input field
-      const parts = dateString.split('-');
-      if (parts.length === 3) {
-        const [year, month, day] = parts.map(Number);
-        // Create date at noon UTC on the specified day to avoid timezone issues
-        return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-      }
-    }
-    
-    // For other date inputs (including Date objects)
-    const date = new Date(dateString);
-    if (!isNaN(date.getTime())) {
-      // Extract year, month and day
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      const day = date.getDate();
-      
-      // Create a new Date at noon UTC to avoid timezone boundary issues
-      return new Date(Date.UTC(year, month, day, 12, 0, 0));
-    }
-    
-    console.warn('Invalid date detected:', dateString);
-    // Default to today as a fallback
-    const today = new Date();
-    return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0));
-  } catch (error) {
-    console.error('Error normalizing date:', error);
-    // Default to today as a fallback
-    const today = new Date();
-    return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0));
-  }
+  // If it's a Date object
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 interface TradeViewModalProps {
@@ -106,26 +91,25 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
   trade,
   allTrades,
 }) => {
-  const [currentMonth, setCurrentMonth] = useState<Date>(
-    trade ? normalizeDate(trade.date) : normalizeDate(new Date())
-  );
+  // Parse any string dates into Date objects for calendar functionality
+  const tradeDate = trade ? new Date(trade.date) : new Date();
+  
+  const [currentMonth, setCurrentMonth] = useState<Date>(tradeDate);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    trade ? normalizeDate(trade.date) : undefined
+    trade ? tradeDate : undefined
   );
   const [selectedTrades, setSelectedTrades] = useState<Trade[]>([]);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [tradeToEdit, setTradeToEdit] = useState<Trade | undefined>(undefined);
 
-  // Group trades by date using consistent date formatting
+  // Group trades by date using consistent date key formatting
   const tradesByDate = useMemo(() => {
     const result = new Map<string, Trade[]>();
     
     allTrades.forEach(trade => {
-      // Use normalizeDate to ensure consistent date handling
-      const normalizedDate = normalizeDate(trade.date);
-      // Use a consistent date format string for grouping trades by date
-      const dateKey = format(normalizedDate, 'yyyy-MM-dd');
+      // Use a consistent date key format
+      const dateKey = getDateKey(trade.date);
       if (!result.has(dateKey)) {
         result.set(dateKey, []);
       }
@@ -176,8 +160,8 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
     setSelectedDate(date);
     
     if (date) {
-      // Use the same consistent formatting for date keys
-      const dateKey = format(date, 'yyyy-MM-dd');
+      // Use getDateKey for consistent date key formatting
+      const dateKey = getDateKey(date);
       setSelectedTrades(tradesByDate.get(dateKey) || []);
     } else {
       setSelectedTrades([]);
@@ -223,12 +207,12 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
   // Default to the current trade if nothing is selected
   useEffect(() => {
     if (trade && !selectedDate) {
-      // Ensure we're using a consistently formatted date with normalized timezone
-      const tradeDate = normalizeDate(trade.date);
-      setSelectedDate(tradeDate);
+      // Create a Date object from the trade date string
+      const tradeDateObj = new Date(trade.date);
+      setSelectedDate(tradeDateObj);
       
-      // Use a consistently formatted date key
-      const dateKey = format(tradeDate, 'yyyy-MM-dd');
+      // Use the getDateKey function for consistent formatting
+      const dateKey = getDateKey(trade.date);
       setSelectedTrades(tradesByDate.get(dateKey) || [trade]);
     }
   }, [trade, tradesByDate, selectedDate]);
@@ -283,9 +267,9 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
             {/* Calendar grid */}
             <div className="grid grid-cols-7 gap-1">
               {calendarDays.map((day) => {
-                const dateStr = format(day, 'yyyy-MM-dd');
+                const dateKey = getDateKey(day);
                 const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-                const dayData = dailyPnL.get(dateStr);
+                const dayData = dailyPnL.get(dateKey);
                 const hasData = !!dayData;
                 const isProfitable = hasData && dayData.total > 0;
                 const isSelected = selectedDate && isSameDay(day, selectedDate);
@@ -296,7 +280,7 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                 if (isEmptyDay) {
                   return (
                     <div
-                      key={dateStr}
+                      key={dateKey}
                       className="p-2 h-32 bg-gray-50 rounded-lg text-left relative overflow-hidden opacity-30"
                     >
                       <div className="font-medium text-gray-400">{format(day, 'd')}</div>
@@ -306,7 +290,7 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
 
                 return (
                   <button
-                    key={dateStr}
+                    key={dateKey}
                     className={cn(
                       "p-2 h-32 rounded-lg transition-colors text-left relative overflow-hidden",
                       hasData 
