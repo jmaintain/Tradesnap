@@ -69,11 +69,7 @@ function AppRouter() {
         
         if (response.verified) {
           setIsVerified(true);
-          // If user just got verified and is on the landing page, redirect to dashboard
-          if (location === '/' || location === '/landing') {
-            console.log('Verified user detected on landing page, redirecting to dashboard');
-            window.location.href = '/dashboard';
-          }
+          // No longer redirect users from landing page to dashboard
         }
       } catch (error) {
         console.error('Failed to verify email status:', error);
@@ -98,7 +94,7 @@ function AppRouter() {
   }
   
   // For Landing page OR when not verified, don't show the main app UI
-  if (!isVerified || location === "/" || location === "/landing") {
+  if (!isVerified || location === "/landing") {
     return <Landing />;
   }
   
@@ -139,6 +135,12 @@ function AuthenticatedLayout() {
             </div>
             <div className="flex-1 h-0 overflow-y-auto">
               <nav className="px-2 space-y-1">
+                <a href="/" className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${location === '/' ? 'text-white bg-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
+                  <div className={`mr-3 ${location === '/' ? 'text-gray-300' : 'text-gray-400'}`}>
+                    <ChartLine className="h-6 w-6" />
+                  </div>
+                  Home
+                </a>
                 <a href="/dashboard" className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${location === '/dashboard' ? 'text-white bg-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>
                   <div className={`mr-3 ${location === '/dashboard' ? 'text-gray-300' : 'text-gray-400'}`}>
                     <BarChart3 className="h-6 w-6" />
@@ -206,7 +208,7 @@ function AuthenticatedLayout() {
             <Route path="/journal" component={Journal} />
             <Route path="/analytics" component={Analytics} />
             <Route path="/settings" component={Settings} />
-            <Route component={Dashboard} /> {/* Default to Dashboard for any unmatched routes */}
+            <Route path="/" component={Dashboard} /> {/* Make an explicit route for Dashboard */}
           </Switch>
         </main>
       </div>

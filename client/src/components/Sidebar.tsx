@@ -21,8 +21,14 @@ const Sidebar = () => {
   const navItems = [
     { 
       name: 'Dashboard', 
-      path: '/', 
+      path: '/dashboard', 
       icon: <BarChart3 className="h-5 w-5" />,
+      active: isActive('/dashboard')
+    },
+    {
+      name: 'Home',
+      path: '/',
+      icon: <ChartLine className="h-5 w-5" />,
       active: isActive('/')
     },
     { 
