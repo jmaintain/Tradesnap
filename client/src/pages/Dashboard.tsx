@@ -21,7 +21,7 @@ import TradeTable from '@/components/ui/trade-table';
 import InstrumentTable from '@/components/ui/instrument-table';
 import NewTradeModal from '@/components/NewTradeModal';
 import TradeViewModal from '@/components/TradeViewModal';
-import { StorageDebug } from '@/components/StorageDebug';
+
 import { Trade } from '@shared/schema';
 
 const Dashboard: React.FC = () => {
@@ -154,9 +154,6 @@ const Dashboard: React.FC = () => {
           </CardFooter>
         </Card>
 
-        {/* Storage Debug Component */}
-        <StorageDebug />
-        
         {/* Instrument Reference Data */}
         <Card>
           <CardHeader className="border-b border-gray-200">

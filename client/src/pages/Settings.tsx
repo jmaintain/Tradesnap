@@ -34,6 +34,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Save } from 'lucide-react';
 import { StorageManagement } from '@/components/ui/storage-management';
+import { StorageDebug } from '@/components/StorageDebug';
 
 // Extend the settings schema for the form
 const settingsFormSchema = insertSettingsSchema.omit({ userId: true }).extend({
@@ -186,6 +187,19 @@ const Settings: React.FC = () => {
         </Card>
         
         <StorageManagement monthsToRetain={1} />
+        
+        {/* Storage Debug Panel */}
+        <Card className="mt-8 mb-8">
+          <CardHeader>
+            <CardTitle>Storage Debug Information</CardTitle>
+            <CardDescription>
+              Technical details about IndexedDB storage (for developers)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <StorageDebug />
+          </CardContent>
+        </Card>
         
         <Card className="mt-8">
           <CardHeader>
