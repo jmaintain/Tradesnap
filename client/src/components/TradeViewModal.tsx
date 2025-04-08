@@ -253,12 +253,12 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                   {showExactValues ? (
                     <>
                       <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>Show Indicators</span>
+                      <span>Hide money</span>
                     </>
                   ) : (
                     <>
                       <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>Show Values</span>
+                      <span>Show money</span>
                     </>
                   )}
                 </Button>
