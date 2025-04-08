@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useMemo, useEffect } from 'react';
-import { format, parse, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, addDays, subDays } from 'date-fns';
+import { format, parse, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, addDays, subDays, parseISO } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +38,61 @@ import { Trade } from '@shared/schema';
 import ImageViewer from './ImageViewer';
 import EditTradeModal from './EditTradeModal';
 
+// Function to normalize dates and avoid timezone issues
+const normalizeDate = (dateString: string | Date): Date => {
+  // Default to today if input is invalid
+  if (!dateString) {
+    const today = new Date();
+    return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0));
+  }
+  
+  try {
+    // Handle ISO strings using parseISO
+    if (typeof dateString === 'string' && dateString.includes('T')) {
+      // This is an ISO string like '2025-04-03T00:00:00.000Z'
+      const parsedDate = parseISO(dateString);
+      // Extract year, month and day
+      const year = parsedDate.getFullYear();
+      const month = parsedDate.getMonth();
+      const day = parsedDate.getDate();
+      
+      return new Date(Date.UTC(year, month, day, 12, 0, 0));
+    }
+    // Handle YYYY-MM-DD format 
+    else if (typeof dateString === 'string' && dateString.includes('-')) {
+      // If it's a date string in YYYY-MM-DD format from date input field
+      const parts = dateString.split('-');
+      if (parts.length === 3) {
+        const [year, month, day] = parts.map(Number);
+        // Create date at noon UTC on the specified day to avoid timezone issues
+        return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+      }
+    }
+    
+    // For other date inputs (including Date objects)
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      // Extract year, month and day
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const day = date.getDate();
+      
+      // Create a new Date at noon UTC to avoid timezone boundary issues
+      return new Date(Date.UTC(year, month, day, 12, 0, 0));
+    }
+    
+    console.warn('Invalid date detected:', dateString);
+    // Default to today as a fallback
+    const today = new Date();
+    return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0));
+  } catch (error) {
+    console.error('Error normalizing date:', error);
+    // Default to today as a fallback
+    const today = new Date();
+    return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0));
+  }
+};
+
 interface TradeViewModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -52,10 +107,10 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
   allTrades,
 }) => {
   const [currentMonth, setCurrentMonth] = useState<Date>(
-    trade ? new Date(trade.date) : new Date()
+    trade ? normalizeDate(trade.date) : normalizeDate(new Date())
   );
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    trade ? new Date(trade.date) : undefined
+    trade ? normalizeDate(trade.date) : undefined
   );
   const [selectedTrades, setSelectedTrades] = useState<Trade[]>([]);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
@@ -67,8 +122,10 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
     const result = new Map<string, Trade[]>();
     
     allTrades.forEach(trade => {
+      // Use normalizeDate to ensure consistent date handling
+      const normalizedDate = normalizeDate(trade.date);
       // Use a consistent date format string for grouping trades by date
-      const dateKey = format(new Date(trade.date), 'yyyy-MM-dd');
+      const dateKey = format(normalizedDate, 'yyyy-MM-dd');
       if (!result.has(dateKey)) {
         result.set(dateKey, []);
       }
@@ -166,8 +223,8 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
   // Default to the current trade if nothing is selected
   useEffect(() => {
     if (trade && !selectedDate) {
-      // Ensure we're using a consistently formatted date
-      const tradeDate = new Date(trade.date);
+      // Ensure we're using a consistently formatted date with normalized timezone
+      const tradeDate = normalizeDate(trade.date);
       setSelectedDate(tradeDate);
       
       // Use a consistently formatted date key
