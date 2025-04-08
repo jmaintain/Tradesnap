@@ -1,9 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { BarChart3, ClipboardList, PieChart, Settings, ChartLine, User, BookOpen } from 'lucide-react';
+import { BarChart3, ClipboardList, PieChart, Settings, ChartLine, Mail, BookOpen } from 'lucide-react';
 
 const Sidebar = () => {
   const [location] = useLocation();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Get the user email from localStorage
+    const email = localStorage.getItem('userEmail');
+    if (email) {
+      setUserEmail(email);
+    }
+  }, []);
 
   const isActive = (path: string) => {
     return location === path;
@@ -73,12 +82,18 @@ const Sidebar = () => {
           <div className="flex items-center">
             <div>
               <div className="rounded-full h-9 w-9 flex items-center justify-center bg-gray-600 text-white">
-                <User className="h-5 w-5" />
+                <Mail className="h-5 w-5" />
               </div>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-white">John Trader</p>
-              <p className="text-xs font-medium text-gray-400">View profile</p>
+              <p className="text-sm font-medium text-white truncate w-40">
+                {userEmail || 'User'}
+              </p>
+              <p className="text-xs font-medium text-gray-400">
+                <span className="bg-blue-900 text-blue-100 px-2 py-0.5 rounded-full text-[10px]">
+                  Free Account
+                </span>
+              </p>
             </div>
           </div>
         </div>
