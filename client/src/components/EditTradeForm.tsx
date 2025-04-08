@@ -91,13 +91,22 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
   // Function to fetch journal entries for a specific date
   const fetchJournalEntriesForDate = async (date: Date) => {
     try {
-      const dateStr = format(date, 'yyyy-MM-dd');
+      // Normalize the date to avoid timezone issues
+      const normalizedDate = normalizeDate(date);
+      const dateStr = format(normalizedDate, 'yyyy-MM-dd');
       const journalEntries = await apiRequestAdapter<JournalEntry[]>(`/api/journal/date/${dateStr}`);
       return journalEntries;
     } catch (error) {
       console.error('Error fetching journal entries:', error);
       return [];
     }
+  };
+
+  // Function to handle date conversion for trade date
+  const normalizeDate = (dateString: string | Date): Date => {
+    const date = new Date(dateString);
+    // Create a date that preserves the day regardless of timezone
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
   };
 
   // Initialize the form with existing trade data
@@ -109,7 +118,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       quantity: trade.quantity || 1,
       entryPrice: trade.entryPrice || '',
       exitPrice: trade.exitPrice || '',
-      date: trade.date ? new Date(trade.date) : new Date(),
+      date: trade.date ? normalizeDate(trade.date) : normalizeDate(new Date()),
       notes: trade.notes || '',
     },
   });
@@ -151,7 +160,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
     if (trade.date) {
       const loadJournalEntries = async () => {
         try {
-          const date = new Date(trade.date);
+          const date = normalizeDate(trade.date);
           const entries = await fetchJournalEntriesForDate(date);
           
           if (entries.length > 0) {
@@ -188,7 +197,9 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       // Add all form fields to FormData
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'date') {
-          formData.append(key, format(value, 'yyyy-MM-dd'));
+          // Ensure we use a normalized date to avoid timezone issues
+          const normalizedDate = normalizeDate(value);
+          formData.append(key, format(normalizedDate, 'yyyy-MM-dd'));
         } else if (value !== undefined && value !== null) {
           formData.append(key, value.toString());
         }
@@ -255,7 +266,9 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       // Process journal entry if included
       if (includeJournal && data.date) {
         try {
-          const dateStr = format(data.date, 'yyyy-MM-dd');
+          // Use normalized date for journal entry
+          const normalizedDate = normalizeDate(data.date);
+          const dateStr = format(normalizedDate, 'yyyy-MM-dd');
           
           if (existingJournalEntry) {
             // Update existing journal entry
@@ -455,7 +468,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
                     type="date" 
                     {...field} 
                     value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''}
-                    onChange={(e) => field.onChange(new Date(e.target.value))}
+                    onChange={(e) => field.onChange(normalizeDate(e.target.value))}
                   />
                 </FormControl>
                 <FormMessage />

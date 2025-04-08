@@ -40,6 +40,13 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
+// Function to handle date conversion to avoid timezone issues
+const normalizeDate = (dateString: string | Date): Date => {
+  const date = new Date(dateString);
+  // Create a date that preserves the day regardless of timezone
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+};
+
 // Extend the trade schema for the form with required fields validation
 const tradeFormSchema = insertTradeSchema.extend({
   symbol: z.string().min(1, { message: "Symbol is required" }),
@@ -47,7 +54,7 @@ const tradeFormSchema = insertTradeSchema.extend({
   quantity: z.number().min(1, { message: "Quantity must be at least 1" }),
   entryPrice: z.string().min(1, { message: "Entry price is required" }),
   exitPrice: z.string().min(1, { message: "Exit price is required" }),
-  date: z.any().transform(val => val ? new Date(val) : new Date()),
+  date: z.any().transform(val => val ? normalizeDate(val) : normalizeDate(new Date())),
   screenshots: z.any().optional(),
   // Ensuring default userId for demo purposes
   userId: z.number().default(1),
@@ -83,7 +90,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
       quantity: 1,
       entryPrice: '',
       exitPrice: '',
-      date: new Date(),
+      date: normalizeDate(new Date()),
       notes: '',
     },
   });
@@ -114,10 +121,12 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
       // Add all form fields to FormData
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'date') {
-          // Make sure we're using the date directly without any timezone adjustments
+          // Make sure we're using the normalized date without timezone issues
           // This ensures the exact date selected by the user is used
           const selectedDate = value as Date;
-          formData.append(key, selectedDate.toISOString());
+          // Apply normalization to ensure consistency with date handling across the app
+          const normalizedDate = normalizeDate(selectedDate);
+          formData.append(key, normalizedDate.toISOString());
         } else if (value !== undefined && value !== null) {
           formData.append(key, value.toString());
         }
@@ -181,11 +190,13 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
         try {
           // Use the same date format as the trade
           const selectedDate = data.date as Date;
+          // Ensure the date is normalized to avoid timezone issues
+          const normalizedDate = normalizeDate(selectedDate);
           await apiRequestAdapter('/api/journal', {
             method: 'POST',
             body: JSON.stringify({
               content: journalContent,
-              date: selectedDate.toISOString(),
+              date: normalizedDate.toISOString(),
               mood: journalMood
             }),
             headers: {
@@ -197,7 +208,8 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
           queryClient.invalidateQueries({ queryKey: ['/api/journal'] });
           
           // Format date for the journal date query cache invalidation
-          const dateForQuery = format(data.date, 'yyyy-MM-dd');
+          // Use normalized date to ensure consistency
+          const dateForQuery = format(normalizedDate, 'yyyy-MM-dd');
           queryClient.invalidateQueries({ queryKey: ['/api/journal/date', dateForQuery] });
           
           toast({
@@ -368,7 +380,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
                     type="date" 
                     {...field} 
                     value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''}
-                    onChange={(e) => field.onChange(new Date(e.target.value))}
+                    onChange={(e) => field.onChange(normalizeDate(e.target.value))}
                   />
                 </FormControl>
                 <FormMessage />
