@@ -165,25 +165,6 @@ const Settings: React.FC = () => {
                   )}
                 />
                 
-                <div className="my-4 p-4 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
-                  <div className="flex items-start">
-                    <div className="mr-3 mt-0.5">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-blue-500">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 16v-4" />
-                        <path d="M12 8h.01" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-blue-800 mb-1">Theme Preference</h4>
-                      <p className="text-sm">
-                        TradeSnap now automatically adapts to your system's light/dark mode preference. 
-                        Change your device settings to switch between light and dark themes.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
                 <Separator />
                 
                 <div className="flex justify-end">
