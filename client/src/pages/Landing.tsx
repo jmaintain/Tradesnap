@@ -3,7 +3,7 @@ import Logo from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, BarChart2, LineChart, Mail, PieChart, ShieldCheck, Zap } from 'lucide-react';
+import { ArrowRight, BarChart2, LineChart, Mail, PieChart, ShieldCheck, Zap, Heart } from 'lucide-react';
 import { apiRequestAdapter } from '@/lib/apiAdapter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useLocation } from 'wouter';
@@ -273,6 +273,17 @@ const Landing: React.FC = () => {
               <h3 className="text-lg font-medium text-gray-900">Fast & Responsive</h3>
               <p className="mt-2 text-gray-600">
                 Built with performance in mind. Works on all your devices, from desktop to mobile.
+              </p>
+            </div>
+
+            {/* Feature 6 - Simplicity */}
+            <div className="bg-gray-50 rounded-lg p-6 border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
+                <Heart className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900">Simplicity</h3>
+              <p className="mt-2 text-gray-600">
+                Designed with simplicity at its core. No complicated setup or steep learning curve.
               </p>
             </div>
           </div>
