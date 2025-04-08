@@ -198,9 +198,21 @@ const Landing: React.FC = () => {
             </div>
             <div className="hidden md:block">
               <div className="relative h-96 w-full">
-                <Logo size="xl" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 opacity-70 blur-3xl"></div>
-                <div className="absolute inset-0 rounded-lg border border-gray-200"></div>
+                <div className="absolute inset-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                  <video 
+                    className="w-full h-full object-cover"
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline
+                  >
+                    <source src="/trading-video.mp4" type="video/mp4" />
+                    {/* Fallback if video doesn't load */}
+                    <Logo size="xl" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  </video>
+                  {/* Overlay gradient for better text visibility if needed */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-100/30 to-purple-100/30"></div>
+                </div>
               </div>
             </div>
           </div>
