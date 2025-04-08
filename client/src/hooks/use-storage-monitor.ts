@@ -37,36 +37,53 @@ export function useStorageMonitor(
   // Function to refresh storage information
   const refreshInfo = useCallback(async () => {
     console.log("useStorageMonitor: Starting refresh");
-    if (!isIndexedDBSupported()) {
-      toast({
-        title: "Browser Storage Not Supported",
-        description: "Your browser doesn't support IndexedDB, which is required for local storage features.",
-        variant: "destructive"
-      });
-      setIsLoading(false);
-      console.log("useStorageMonitor: IndexedDB not supported");
-      return;
-    }
-
+    
     setIsLoading(true);
     
     try {
+      // Check if IndexedDB is supported
+      if (!isIndexedDBSupported()) {
+        console.log("useStorageMonitor: IndexedDB not supported");
+        toast({
+          title: "Browser Storage Not Supported",
+          description: "Your browser doesn't support IndexedDB, which is required for local storage features.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Get storage usage information
       console.log("useStorageMonitor: Checking storage usage");
       const info = await checkStorageUsage(DB_NAME);
-      console.log("useStorageMonitor: Storage info retrieved", info);
-      setStorageInfo(info);
       
-      // Get old trade records
-      const oldIds = await getOldTradeRecords(DB_NAME, monthsToRetain);
-      setOldTradeIds(oldIds);
-      console.log(`useStorageMonitor: Found ${oldIds.length} old trade records`);
-      
-      // Show warning if approaching storage limit
-      if (info?.isApproachingLimit && oldIds.length > 0) {
+      // Even if storage check returns null, we should have a default info object now with our improved implementation
+      if (info) {
+        console.log("useStorageMonitor: Storage info retrieved", info);
+        setStorageInfo(info);
+        
+        // Get old trade records - only if storage check succeeded
+        try {
+          const oldIds = await getOldTradeRecords(DB_NAME, monthsToRetain);
+          setOldTradeIds(oldIds);
+          console.log(`useStorageMonitor: Found ${oldIds.length} old trade records`);
+          
+          // Show warning if approaching storage limit
+          if (info.isApproachingLimit && oldIds.length > 0) {
+            toast({
+              title: "Storage Space Running Low",
+              description: `You're using ${info.formattedUsed} of ${info.formattedQuota}. Consider clearing old screenshots or trades to free up space.`,
+              variant: "destructive"
+            });
+          }
+        } catch (tradeError) {
+          console.error("Failed to get old trade records:", tradeError);
+          // Continue anyway - we at least have storage info
+        }
+      } else {
+        console.error("Storage info check returned null despite fallback");
         toast({
-          title: "Storage Space Running Low",
-          description: `You're using ${info.formattedUsed} of ${info.formattedQuota}. Consider clearing old screenshots or trades to free up space.`,
+          title: "Storage Check Failed",
+          description: "Unable to check storage usage. Some storage management features may be unavailable.",
           variant: "destructive"
         });
       }
