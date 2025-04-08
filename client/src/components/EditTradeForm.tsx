@@ -134,6 +134,50 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
     return date;
   };
 
+  // Process the date from the trade before passing it to the form
+  /**
+   * Process a date value from various possible formats into a consistent Date object
+   * - Handles ISO strings from the server (2025-04-04T00:00:00.000Z)
+   * - Handles regular Date objects
+   * - Handles string date values
+   */
+  const processTradeDate = (dateValue: Date | string | null | undefined): Date => {
+    console.log('Processing date value:', dateValue, 'Type:', typeof dateValue);
+    
+    if (!dateValue) {
+      console.log('No date value provided, using current date');
+      return normalizeDate(new Date());
+    }
+    
+    // If it's a string that looks like an ISO date, handle it specially
+    if (typeof dateValue === 'string') {
+      if (dateValue.includes('T')) {
+        // Extract the date part (YYYY-MM-DD) from ISO string
+        const datePart = dateValue.split('T')[0];
+        console.log('Extracted date part from ISO string:', datePart);
+        const [year, month, day] = datePart.split('-').map(Number);
+        
+        // Create a date at UTC noon to avoid timezone issues
+        const result = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+        console.log('Created UTC date from parts:', result.toISOString());
+        return result;
+      } else {
+        // Plain date string like "2025-04-08"
+        console.log('Processing plain date string:', dateValue);
+        return normalizeDate(dateValue);
+      }
+    }
+    
+    // If it's already a Date object, just normalize it
+    console.log('Processing Date object:', dateValue);
+    return normalizeDate(dateValue);
+  };
+
+  // Log the date we're initializing with for debugging
+  console.log('Trade date from server:', trade.date);
+  const initialDate = processTradeDate(trade.date);
+  console.log('Initial date for form:', initialDate);
+
   // Initialize the form with existing trade data
   const form = useForm<TradeFormValues>({
     resolver: zodResolver(tradeFormSchema),
@@ -143,7 +187,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       quantity: trade.quantity || 1,
       entryPrice: trade.entryPrice || '',
       exitPrice: trade.exitPrice || '',
-      date: trade.date ? normalizeDate(trade.date) : normalizeDate(new Date()),
+      date: initialDate,
       notes: trade.notes || '',
     },
   });
@@ -185,7 +229,9 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
     if (trade.date) {
       const loadJournalEntries = async () => {
         try {
-          const date = normalizeDate(trade.date);
+          // Use the same processTradeDate to handle the date properly
+          const date = processTradeDate(trade.date);
+          console.log('Loading journal entries for date:', date);
           const entries = await fetchJournalEntriesForDate(date);
           
           if (entries.length > 0) {
