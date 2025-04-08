@@ -171,7 +171,7 @@ const Landing: React.FC = () => {
                 <p className="mt-3 text-sm text-gray-500">
                   {showVerificationAlert 
                     ? "Don't see the email? Check your spam folder."
-                    : "We'll notify you when we launch. No spam, ever."}
+                    : "We're currently in beta testing. An email is required to use the app, but you won't receive any emails from us until we officially launch."}
                 </p>
               </div>
             </div>
@@ -264,7 +264,7 @@ const Landing: React.FC = () => {
             Elevate your trading with data-driven decisions
           </h2>
           <p className="mt-4 text-xl text-blue-100 max-w-2xl mx-auto">
-            Join traders who use TradeSnap to track, analyze, and improve.
+            We're currently in beta testing. An email is required to use the app, but you won't receive any emails from us until we officially launch.
           </p>
           <div className="mt-8 max-w-md mx-auto">
             <form onSubmit={handleSubmit} className="sm:flex sm:divide-x-0">
