@@ -681,9 +681,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Store the verified email in localStorage
               localStorage.setItem('userEmail', '${subscriber.email}');
               
-              // Redirect to app after a short delay
+              // Redirect to dashboard after a short delay
               setTimeout(function() {
-                window.location.href = '/';
+                window.location.href = '/dashboard';
               }, 2000);
             </script>
           </head>

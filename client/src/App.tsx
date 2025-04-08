@@ -93,7 +93,8 @@ function AppRouter() {
   }
   
   // For Landing page OR when not verified, don't show the main app UI
-  if (!isVerified || location === "/" || location === "/landing") {
+  // But allow direct access to /dashboard and other app routes for users coming from email verification
+  if (!isVerified && (location === "/" || location === "/landing")) {
     return <Landing />;
   }
   
