@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -7,7 +7,10 @@ import {
   ArrowUpCircle, 
   ArrowDownCircle,
   Calendar,
-  Layers
+  Layers,
+  TrendingUp,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,20 +28,18 @@ import {
   Cell
 } from 'recharts';
 import { Trade } from '@shared/schema';
+import PerformanceTimeline from '@/components/PerformanceTimeline';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const Analytics: React.FC = () => {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<string>("timeline");
+  const [showDetailedCharts, setShowDetailedCharts] = useState<boolean>(false);
   
   // Fetch all trades
   const { data: trades = [], isLoading } = useQuery<Trade[]>({
-    queryKey: ['/api/trades'],
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Error loading trades",
-        description: error instanceof Error ? error.message : "An error occurred"
-      });
-    }
+    queryKey: ['/api/trades']
   });
 
   // Generate data for P&L by Instrument
@@ -178,19 +179,46 @@ const Analytics: React.FC = () => {
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">Analytics</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900">Analytics</h1>
+          
+          {trades.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-1"
+                onClick={() => setShowDetailedCharts(!showDetailedCharts)}
+              >
+                {showDetailedCharts ? (
+                  <>
+                    <ChevronUp className="h-4 w-4" />
+                    <span className="hidden sm:inline">Hide Detailed Charts</span>
+                    <span className="sm:hidden">Hide</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-4 w-4" />
+                    <span className="hidden sm:inline">Show Detailed Charts</span>
+                    <span className="sm:hidden">More</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
         
         {trades.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center h-64">
-              <PieChartIcon className="h-16 w-16 text-gray-400 mb-4" />
+              <TrendingUp className="h-16 w-16 text-gray-400 mb-4" />
               <p className="text-gray-500 text-lg">No trade data available for analysis</p>
               <p className="text-gray-400 mt-2">Add trades to see your performance analytics</p>
             </CardContent>
           </Card>
         ) : (
           <>
-            {/* Performance Metrics */}
+            {/* Performance Metrics Summary */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
               <Card>
                 <CardContent className="pt-5">
@@ -286,95 +314,104 @@ const Analytics: React.FC = () => {
               </Card>
             </div>
 
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              {/* P&L by Instrument */}
-              <Card>
-                <CardHeader className="pb-0">
-                  <CardTitle className="text-lg">P&L by Instrument</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={pnlByInstrument}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis tickFormatter={(value) => `$${value}`} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend />
-                        <Bar dataKey="value" name="P&L" fill="#3B82F6">
-                          {pnlByInstrument.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.value >= 0 ? WIN_COLOR : LOSS_COLOR} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Main Performance Timeline */}
+            <PerformanceTimeline trades={trades} />
 
-              {/* Win Rate by Instrument */}
-              <Card>
-                <CardHeader className="pb-0">
-                  <CardTitle className="text-lg">Win Rate by Instrument</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={winLossByInstrument}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis yAxisId="left" orientation="left" tickFormatter={(value) => `${value}%`} />
-                        <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `${value}`} />
-                        <Tooltip />
-                        <Legend />
-                        <Bar yAxisId="right" dataKey="wins" name="Wins" fill={WIN_COLOR} />
-                        <Bar yAxisId="right" dataKey="losses" name="Losses" fill={LOSS_COLOR} />
-                        <Bar yAxisId="left" dataKey="winRate" name="Win Rate %" fill="#3B82F6" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Detailed Charts Section */}
+            {showDetailedCharts && (
+              <div className="mt-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Detailed Analytics</h2>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                  {/* P&L by Instrument */}
+                  <Card>
+                    <CardHeader className="pb-0">
+                      <CardTitle className="text-lg">P&L by Instrument</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={pnlByInstrument}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis tickFormatter={(value) => `$${value}`} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend />
+                            <Bar dataKey="value" name="P&L" fill="#3B82F6">
+                              {pnlByInstrument.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.value >= 0 ? WIN_COLOR : LOSS_COLOR} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-            {/* More Charts - Win/Loss Ratio */}
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>Win/Loss Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: 'Winning Trades', value: metrics.winningTrades },
-                          { name: 'Losing Trades', value: metrics.losingTrades }
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={120}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-                      >
-                        <Cell fill={WIN_COLOR} />
-                        <Cell fill={LOSS_COLOR} />
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  {/* Win Rate by Instrument */}
+                  <Card>
+                    <CardHeader className="pb-0">
+                      <CardTitle className="text-lg">Win Rate by Instrument</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={winLossByInstrument}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis yAxisId="left" orientation="left" tickFormatter={(value) => `${value}%`} />
+                            <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `${value}`} />
+                            <Tooltip />
+                            <Legend />
+                            <Bar yAxisId="right" dataKey="wins" name="Wins" fill={WIN_COLOR} />
+                            <Bar yAxisId="right" dataKey="losses" name="Losses" fill={LOSS_COLOR} />
+                            <Bar yAxisId="left" dataKey="winRate" name="Win Rate %" fill="#3B82F6" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                
+                  {/* Win/Loss Distribution */}
+                  <Card className="lg:col-span-2">
+                    <CardHeader>
+                      <CardTitle>Win/Loss Distribution</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={[
+                                { name: 'Winning Trades', value: metrics.winningTrades },
+                                { name: 'Losing Trades', value: metrics.losingTrades }
+                              ]}
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={120}
+                              fill="#8884d8"
+                              dataKey="value"
+                              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                            >
+                              <Cell fill={WIN_COLOR} />
+                              <Cell fill={LOSS_COLOR} />
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            )}
           </>
         )}
       </div>
