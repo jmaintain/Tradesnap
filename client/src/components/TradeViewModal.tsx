@@ -32,6 +32,8 @@ import {
   X,
   Maximize2,
   Edit,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Trade } from '@shared/schema';
@@ -102,6 +104,8 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [tradeToEdit, setTradeToEdit] = useState<Trade | undefined>(undefined);
+  // Toggle for showing exact P&L values or just win/loss indicators
+  const [showExactValues, setShowExactValues] = useState<boolean>(true);
 
   // Group trades by date using consistent date key formatting
   const tradesByDate = useMemo(() => {
@@ -234,24 +238,44 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
 
           {/* Full width custom calendar */}
           <div className="bg-purple-50 p-3 sm:p-6 border-t border-b border-purple-100">
-            {/* Month navigation */}
-            <div className="flex items-center justify-between mb-4">
+            {/* Month navigation and toggle */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
               <h2 className="text-lg sm:text-2xl font-bold text-purple-800">
                 {format(currentMonth, 'MMMM yyyy')}
               </h2>
-              <div className="flex gap-2">
-                <button 
-                  onClick={goToPreviousMonth}
-                  className="p-1 rounded-full hover:bg-purple-200 transition-colors"
+              <div className="flex items-center justify-between sm:justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1 text-xs sm:text-sm h-8 sm:h-9 bg-white border-purple-200"
+                  onClick={() => setShowExactValues(!showExactValues)}
                 >
-                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-purple-800" />
-                </button>
-                <button 
-                  onClick={goToNextMonth}
-                  className="p-1 rounded-full hover:bg-purple-200 transition-colors"
-                >
-                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-purple-800" />
-                </button>
+                  {showExactValues ? (
+                    <>
+                      <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span>Show Indicators</span>
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span>Show Values</span>
+                    </>
+                  )}
+                </Button>
+                <div className="flex gap-1">
+                  <button 
+                    onClick={goToPreviousMonth}
+                    className="p-1 rounded-full hover:bg-purple-200 transition-colors"
+                  >
+                    <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-purple-800" />
+                  </button>
+                  <button 
+                    onClick={goToNextMonth}
+                    className="p-1 rounded-full hover:bg-purple-200 transition-colors"
+                  >
+                    <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-purple-800" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -308,12 +332,22 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                     
                     {hasData && (
                       <>
-                        <div className={cn(
-                          "font-bold text-xs sm:text-sm md:text-lg",
-                          isProfitable ? "text-green-800" : "text-red-800"
-                        )}>
-                          {isProfitable ? '+' : ''}${Math.abs(dayData.total).toFixed(2)}
-                        </div>
+                        {showExactValues ? (
+                          <div className={cn(
+                            "font-bold text-xs sm:text-sm md:text-lg",
+                            isProfitable ? "text-green-800" : "text-red-800"
+                          )}>
+                            {isProfitable ? '+' : ''}${Math.abs(dayData.total).toFixed(2)}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center my-1">
+                            {isProfitable ? (
+                              <TrendingUp className="w-5 h-5 text-green-600" />
+                            ) : (
+                              <TrendingDown className="w-5 h-5 text-red-600" />
+                            )}
+                          </div>
+                        )}
                         <div className="text-xs sm:text-sm mt-0 sm:mt-1">
                           {dayData.count} {dayData.count === 1 ? 'trade' : 'trades'}
                         </div>
