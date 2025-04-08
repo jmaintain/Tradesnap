@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useMemo, useEffect } from 'react';
-import { format, parse, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, parse, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, addDays, subDays } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -94,11 +94,23 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
     return result;
   }, [tradesByDate]);
 
-  // Get days of current month for the calendar
-  const daysInMonth = useMemo(() => {
-    const start = startOfMonth(currentMonth);
-    const end = endOfMonth(currentMonth);
-    return eachDayOfInterval({ start, end });
+  // Get full calendar days (including empty days before the start of month)
+  const calendarDays = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    
+    // Get the day of the week for the first day of the month (0 = Sunday, 1 = Monday, etc.)
+    const firstDayOfWeek = getDay(monthStart);
+    
+    // Create empty days to fill in the days before the 1st of the month
+    const emptyDaysAtStart = Array.from({ length: firstDayOfWeek }, (_, i) => {
+      // Use a sentinel value for empty days (subtracting days from the 1st)
+      return subDays(monthStart, firstDayOfWeek - i);
+    });
+    
+    // Return the combined array of empty days and actual month days
+    return [...emptyDaysAtStart, ...daysInMonth];
   }, [currentMonth]);
 
   // When a date is selected, update the selected trades
@@ -207,12 +219,27 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
 
             {/* Calendar grid */}
             <div className="grid grid-cols-7 gap-1">
-              {daysInMonth.map(day => {
+              {calendarDays.map((day) => {
                 const dateStr = format(day, 'yyyy-MM-dd');
+                const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
                 const dayData = dailyPnL.get(dateStr);
                 const hasData = !!dayData;
                 const isProfitable = hasData && dayData.total > 0;
                 const isSelected = selectedDate && isSameDay(day, selectedDate);
+                
+                // For days outside the current month (the empty days at the start), we'll render a blank day
+                const isEmptyDay = !isCurrentMonth;
+                
+                if (isEmptyDay) {
+                  return (
+                    <div
+                      key={dateStr}
+                      className="p-2 h-32 bg-gray-50 rounded-lg text-left relative overflow-hidden opacity-30"
+                    >
+                      <div className="font-medium text-gray-400">{format(day, 'd')}</div>
+                    </div>
+                  );
+                }
 
                 return (
                   <button
