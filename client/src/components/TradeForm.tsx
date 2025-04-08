@@ -54,7 +54,10 @@ const tradeFormSchema = insertTradeSchema.extend({
   quantity: z.number().min(1, { message: "Quantity must be at least 1" }),
   entryPrice: z.string().min(1, { message: "Entry price is required" }),
   exitPrice: z.string().min(1, { message: "Exit price is required" }),
-  date: z.any().transform(val => val ? normalizeDate(val) : normalizeDate(new Date())),
+  date: z.any().transform(val => {
+    // Use normalizeDate from the form component
+    return val ? normalizeDate(val) : normalizeDate(new Date());
+  }),
   screenshots: z.any().optional(),
   // Ensuring default userId for demo purposes
   userId: z.number().default(1),
@@ -380,7 +383,12 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
                     type="date" 
                     {...field} 
                     value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''}
-                    onChange={(e) => field.onChange(normalizeDate(e.target.value))}
+                    onChange={(e) => {
+                      const normalizedDate = normalizeDate(e.target.value);
+                      console.log('Date selected:', e.target.value);
+                      console.log('Normalized date:', normalizedDate);
+                      field.onChange(normalizedDate);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
