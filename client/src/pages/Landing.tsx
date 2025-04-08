@@ -127,7 +127,7 @@ const Landing: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 leading-tight">
-                Capture, Track, <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">Succeed</span>
+                Trade Journaling should not be <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">hard or expensive</span>
               </h2>
               <p className="mt-4 text-lg text-gray-600 max-w-2xl">
                 TradeSnap is your personal trading journal that helps you track performance, 
