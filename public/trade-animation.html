@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Animation</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: linear-gradient(to right, #f0f4ff, #e6f0ff);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    .trading-screen {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .chart-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      padding: 15px;
+    }
+    
+    .chart-line {
+      position: absolute;
+      height: 2px;
+      background: rgba(66, 133, 244, 0.8);
+      width: 0;
+      top: 50%;
+      left: 0;
+      animation: drawLine 8s infinite;
+    }
+    
+    .price-point {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #ff5252;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: movePoint 8s infinite;
+    }
+    
+    .trade-data {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      font-size: 12px;
+      animation: showData 8s infinite;
+      opacity: 0;
+    }
+    
+    .profit-indicator {
+      position: absolute;
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: 4px;
+      animation: showProfit 8s infinite;
+      opacity: 0;
+    }
+    
+    .win {
+      background: rgba(76, 175, 80, 0.9);
+      color: white;
+    }
+    
+    .loss {
+      background: rgba(244, 67, 54, 0.9);
+      color: white;
+    }
+    
+    @keyframes drawLine {
+      0% { width: 0; }
+      40% { width: 80%; }
+      100% { width: 90%; }
+    }
+    
+    @keyframes movePoint {
+      0% { left: 10%; top: 50%; }
+      20% { left: 30%; top: 40%; }
+      40% { left: 50%; top: 60%; }
+      60% { left: 70%; top: 30%; }
+      80% { left: 80%; top: 70%; }
+      100% { left: 90%; top: 45%; }
+    }
+    
+    @keyframes showData {
+      0% { opacity: 0; transform: translateY(20px); }
+      15% { opacity: 1; transform: translateY(0); }
+      85% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+    
+    @keyframes showProfit {
+      0% { opacity: 0; }
+      60% { opacity: 0; }
+      70% { opacity: 1; }
+      95% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="trading-screen">
+    <div class="chart-container">
+      <div class="chart-line"></div>
+      <div class="price-point"></div>
+      
+      <div class="trade-data" style="top: 20%; left: 20%;">
+        Symbol: ES<br>
+        Entry: 5230.50<br>
+        Direction: LONG<br>
+        Quantity: 2
+      </div>
+      
+      <div class="profit-indicator win" style="top: 30%; left: 70%;">
+        +$250.00 (+5.0 pts)
+      </div>
+    </div>
+  </div>
+</body>
+</html>

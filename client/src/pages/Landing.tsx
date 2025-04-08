@@ -198,29 +198,22 @@ const Landing: React.FC = () => {
             </div>
             <div className="hidden md:block">
               <div className="relative h-96 w-full">
-                <div className="absolute inset-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                  <video 
-                    className="w-full h-full object-cover"
-                    autoPlay 
-                    loop 
-                    muted 
-                    playsInline
-                    controls={false}
-                    src="/TradeSnap-Demo-vid.mov"
-                    type="video/quicktime"
-                    onError={(e) => {
-                      // If there's an error loading the video, show the logo
-                      const target = e.target as HTMLVideoElement;
-                      target.style.display = 'none';
-                      console.log('Video failed to load, showing fallback');
-                    }}
-                  />
-                  {/* Fallback component that will be shown if video fails to load */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-blue-100 to-purple-100 opacity-70">
-                    <Logo size="xl" />
+                <div className="absolute inset-0 rounded-lg overflow-hidden border border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+                  {/* Use an iframe to display the animation */}
+                  <iframe
+                    src="/trade-animation.html"
+                    title="Trading Animation"
+                    className="w-full h-full border-0"
+                    style={{ borderRadius: 'inherit' }}
+                  ></iframe>
+                  
+                  {/* Logo overlay for branding */}
+                  <div className="absolute bottom-4 right-4 bg-white bg-opacity-80 rounded-full p-2 shadow-md">
+                    <Logo size="sm" />
                   </div>
-                  {/* Light overlay to enhance text visibility and UI elements */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-100/20 to-purple-100/20"></div>
+                  
+                  {/* Light overlay to enhance text visibility if needed */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-100/10 to-purple-100/10 pointer-events-none"></div>
                 </div>
               </div>
             </div>
