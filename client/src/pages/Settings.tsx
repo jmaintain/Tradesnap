@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -45,6 +45,15 @@ type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 const Settings: React.FC = () => {
   const { toast } = useToast();
+  const [userEmail, setUserEmail] = useState<string>('');
+  
+  // Get user email from localStorage
+  useEffect(() => {
+    const email = localStorage.getItem('userEmail');
+    if (email) {
+      setUserEmail(email);
+    }
+  }, []);
   
   // Fetch instruments for the dropdown
   const { data: instruments = [] } = useQuery({
@@ -223,13 +232,15 @@ const Settings: React.FC = () => {
           <CardContent>
             <div className="space-y-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-500">Username</h4>
-                <p className="mt-1">john.trader</p>
+                <h4 className="text-sm font-medium text-gray-500">Account Type</h4>
+                <p className="mt-1 flex items-center">
+                  <span className="mr-2">Free Account</span>
+                </p>
               </div>
               
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Email</h4>
-                <p className="mt-1">john.trader@example.com</p>
+                <p className="mt-1">{userEmail || 'No email found'}</p>
               </div>
               
               <div className="pt-4">
