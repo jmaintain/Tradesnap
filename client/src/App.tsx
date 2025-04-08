@@ -49,6 +49,13 @@ function AppRouter() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [location] = useLocation();
+  const router = useRouter();
+  
+  // Extract the dashboard url from location
+  const isDashboardUrl = location.startsWith('/dashboard');
+  const isAppUrl = ['/dashboard', '/trades', '/journal', '/analytics', '/settings'].some(path => 
+    location === path || location.startsWith(`${path}/`)
+  );
   
   useEffect(() => {
     const checkVerification = async () => {
@@ -59,6 +66,10 @@ function AppRouter() {
         // If no email is stored, user is not verified
         if (!email) {
           setIsVerifying(false);
+          // If user is trying to access protected routes without email, redirect to landing
+          if (isAppUrl) {
+            router('/');
+          }
           return;
         }
         
@@ -69,16 +80,26 @@ function AppRouter() {
         
         if (response.verified) {
           setIsVerified(true);
+          // If user is at root after verification, redirect to dashboard
+          if (location === '/' && isDashboardUrl === false) {
+            router('/dashboard');
+          }
+        } else if (isAppUrl) {
+          // If verification failed but user is on app routes, redirect to landing
+          router('/');
         }
       } catch (error) {
         console.error('Failed to verify email status:', error);
+        if (isAppUrl) {
+          router('/');
+        }
       } finally {
         setIsVerifying(false);
       }
     };
     
     checkVerification();
-  }, []);
+  }, [location, router, isAppUrl, isDashboardUrl]);
   
   // Show loading indicator while verifying
   if (isVerifying) {
@@ -92,16 +113,28 @@ function AppRouter() {
     );
   }
   
-  // For Landing page OR when not verified, don't show the main app UI
-  // Show landing page on root URL regardless of verification status
+  // For Landing page, always show landing
   if (location === "/" || location === "/landing") {
     return <Landing />;
   }
   
-  // If trying to access other routes without verification, redirect to landing
-  if (!isVerified) {
-    window.location.href = "/";
-    return null;
+  // If trying to access other routes without verification, show error
+  if (!isVerified && isAppUrl) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+        <div className="text-center p-6 max-w-md">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h1>
+          <p className="text-gray-600 mb-6">You need to verify your email before accessing this page.</p>
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            onClick={() => router('/')}
+          >
+            Return to Home
+          </button>
+        </div>
+      </div>
+    );
   }
   
   // Otherwise show the authenticated app UI with sidebar
