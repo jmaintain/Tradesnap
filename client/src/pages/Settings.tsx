@@ -222,12 +222,6 @@ const Settings: React.FC = () => {
                 <h4 className="text-sm font-medium text-gray-500">Email</h4>
                 <p className="mt-1">{userEmail || 'No email found'}</p>
               </div>
-              
-              <div className="pt-4">
-                <Button variant="outline" className="text-red-600 hover:text-red-700">
-                  Delete Account
-                </Button>
-              </div>
             </div>
           </CardContent>
         </Card>
