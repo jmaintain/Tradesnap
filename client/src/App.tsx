@@ -83,17 +83,25 @@ function AuthHandler() {
 }
 
 function Router({ isVerified }: { isVerified: boolean }) {
+  const [location] = useLocation();
+  
+  // Show landing page if not verified
+  if (!isVerified) {
+    return <Landing />;
+  }
+  
+  // Show authenticated app layout with sidebar
+  return <AuthenticatedLayout />;
+}
+
+// Separate layout component for authenticated users
+function AuthenticatedLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
-
-  // Show landing page at / or /landing routes if not verified
-  if (!isVerified) {
-    return <Landing />;
-  }
 
   return (
     <div className="flex h-screen overflow-hidden">
