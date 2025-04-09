@@ -179,9 +179,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.entryPrice) {
         req.body.entryPrice = req.body.entryPrice.toString();
       }
-      if (req.body.exitPrice) {
-        req.body.exitPrice = req.body.exitPrice.toString();
+      
+      // Handle ongoing trade case
+      if (req.body.isOngoing === 'true') {
+        req.body.isOngoing = true;
+        // Clear exitPrice for ongoing trades
+        req.body.exitPrice = null;
+      } else {
+        req.body.isOngoing = false;
+        // Make sure exitPrice is properly formatted when provided
+        if (req.body.exitPrice) {
+          req.body.exitPrice = req.body.exitPrice.toString();
+        }
       }
+      
       if (req.body.quantity) {
         req.body.quantity = parseInt(req.body.quantity);
       }
@@ -250,9 +261,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.entryPrice) {
         req.body.entryPrice = req.body.entryPrice.toString();
       }
-      if (req.body.exitPrice) {
-        req.body.exitPrice = req.body.exitPrice.toString();
+      
+      // Handle ongoing trade case
+      if (req.body.isOngoing === 'true') {
+        req.body.isOngoing = true;
+        // Clear exitPrice for ongoing trades
+        req.body.exitPrice = null;
+      } else if (req.body.isOngoing === 'false') {
+        req.body.isOngoing = false;
+        // Make sure exitPrice is properly formatted when provided
+        if (req.body.exitPrice) {
+          req.body.exitPrice = req.body.exitPrice.toString();
+        }
       }
+      
       if (req.body.quantity) {
         req.body.quantity = parseInt(req.body.quantity);
       }
