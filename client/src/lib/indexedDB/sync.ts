@@ -24,8 +24,15 @@ import {
  */
 export const syncTradesToIndexedDB = async (): Promise<void> => {
   try {
-    // Fetch trades from server directly with fetch API
-    const response = await fetch('/api/trades');
+    // Get the current user ID
+    const userId = parseInt(localStorage.getItem('userId') || '0');
+    if (!userId) {
+      console.warn('No userId found in localStorage, skipping sync');
+      return;
+    }
+    
+    // Fetch trades from server directly with fetch API, with the user ID
+    const response = await fetch(`/api/trades?userId=${userId}`);
     if (!response.ok) {
       console.error(`Failed to fetch trades: ${response.status} ${response.statusText}`);
       return;
@@ -37,8 +44,8 @@ export const syncTradesToIndexedDB = async (): Promise<void> => {
       return;
     }
     
-    // Get all trades from IndexedDB
-    const localTrades = await getAllTrades();
+    // Get all trades for this user from IndexedDB
+    const localTrades = await getAllTrades(userId);
     
     // Create a map of local trades by ID for quick lookup
     const localTradeMap = new Map<number, Trade>();
@@ -46,8 +53,13 @@ export const syncTradesToIndexedDB = async (): Promise<void> => {
       localTradeMap.set(trade.id, trade);
     });
     
-    // Process each server trade
+    // Process each server trade, making sure it belongs to the current user
     for (const serverTrade of serverTrades) {
+      // Skip trades that don't belong to this user
+      if (serverTrade.userId !== userId) {
+        continue;
+      }
+      
       const localTrade = localTradeMap.get(serverTrade.id);
       
       if (!localTrade) {
@@ -74,7 +86,7 @@ export const syncTradesToIndexedDB = async (): Promise<void> => {
     // These could be deleted from the server or created locally while offline
     // For now, we'll keep them (offline-first approach)
     
-    console.log('Trade synchronization complete');
+    console.log('Trade synchronization complete for user:', userId);
   } catch (error) {
     console.error('Error synchronizing trades to IndexedDB:', error);
     throw error;
@@ -143,12 +155,23 @@ export const syncInstrumentsToIndexedDB = async (): Promise<void> => {
  */
 export const syncNewTradeToServer = async (tradeId: number): Promise<Trade> => {
   try {
-    // Get the trade from IndexedDB
-    const localTrade = await getAllTrades();
+    // Get the current user ID
+    const userId = parseInt(localStorage.getItem('userId') || '0');
+    if (!userId) {
+      throw new Error('No userId found in localStorage');
+    }
+    
+    // Get the trade from IndexedDB for this user
+    const localTrade = await getAllTrades(userId);
     const trade = localTrade.find(t => t.id === tradeId);
     
     if (!trade) {
       throw new Error(`Trade with ID ${tradeId} not found in IndexedDB`);
+    }
+    
+    // Make sure the trade belongs to the current user
+    if (trade.userId !== userId) {
+      throw new Error(`Trade with ID ${tradeId} does not belong to the current user`);
     }
     
     // Send the trade to the server using fetch directly
@@ -184,12 +207,23 @@ export const syncNewTradeToServer = async (tradeId: number): Promise<Trade> => {
  */
 export const syncUpdatedTradeToServer = async (tradeId: number): Promise<Trade> => {
   try {
-    // Get the trade from IndexedDB
-    const localTrade = await getAllTrades();
+    // Get the current user ID
+    const userId = parseInt(localStorage.getItem('userId') || '0');
+    if (!userId) {
+      throw new Error('No userId found in localStorage');
+    }
+    
+    // Get the trade from IndexedDB for this user
+    const localTrade = await getAllTrades(userId);
     const trade = localTrade.find(t => t.id === tradeId);
     
     if (!trade) {
       throw new Error(`Trade with ID ${tradeId} not found in IndexedDB`);
+    }
+    
+    // Make sure the trade belongs to the current user
+    if (trade.userId !== userId) {
+      throw new Error(`Trade with ID ${tradeId} does not belong to the current user`);
     }
     
     // Send the updated trade to the server using fetch directly
@@ -226,8 +260,17 @@ export const syncUpdatedTradeToServer = async (tradeId: number): Promise<Trade> 
  */
 export const syncDeletedTradeToServer = async (tradeId: number): Promise<void> => {
   try {
-    // Delete the trade on the server using fetch directly
-    const response = await fetch(`/api/trades/${tradeId}`, {
+    // Get the current user ID
+    const userId = parseInt(localStorage.getItem('userId') || '0');
+    if (!userId) {
+      throw new Error('No userId found in localStorage');
+    }
+    
+    // Verify that the trade belongs to the user before deleting it on the server
+    // Note: In our case, the trade may already be deleted from IndexedDB, so we can't check it
+    
+    // Delete the trade on the server, passing the user ID as a query parameter for security
+    const response = await fetch(`/api/trades/${tradeId}?userId=${userId}`, {
       method: 'DELETE',
     });
     
@@ -238,7 +281,7 @@ export const syncDeletedTradeToServer = async (tradeId: number): Promise<void> =
     // Invalidate the trades query to refresh the UI
     queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
     
-    console.log(`Trade ID ${tradeId} deleted from server`);
+    console.log(`Trade ID ${tradeId} deleted from server for user ${userId}`);
   } catch (error) {
     console.error('Error synchronizing deleted trade to server:', error);
     throw error;

@@ -121,9 +121,15 @@ const tradeFormSchema = insertTradeSchema.extend({
     return processTradeDate(val);
   }),
   screenshots: z.any().optional(),
-  // Ensuring default userId for demo purposes
-  userId: z.number().default(1),
-}).omit({ userId: true });
+  // Use the user's actual ID from localStorage
+  userId: z.number().default(
+    () => {
+      const storedUserId = localStorage.getItem('userId');
+      // Parse the userId, or use a unique value based on timestamp as fallback
+      return storedUserId ? parseInt(storedUserId) : Math.floor(Date.now() / 1000);
+    }
+  ),
+});
 
 type TradeFormValues = z.infer<typeof tradeFormSchema>;
 

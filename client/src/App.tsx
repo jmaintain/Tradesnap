@@ -69,7 +69,20 @@ function AppRouter() {
         
         if (response.verified) {
           setIsVerified(true);
-          // No longer redirect users from landing page to dashboard
+          
+          // Generate a consistent userId hash based on email
+          // This ensures the same user always gets the same ID across devices
+          let userId = 0;
+          for (let i = 0; i < email.length; i++) {
+            userId = ((userId << 5) - userId) + email.charCodeAt(i);
+            userId = userId & userId; // Convert to 32bit integer
+          }
+          // Ensure it's positive and reasonable size
+          userId = Math.abs(userId) % 1000000;
+          
+          // Store the userId in localStorage for use in forms and data fetching
+          localStorage.setItem('userId', userId.toString());
+          console.log('User authenticated with ID:', userId);
         }
       } catch (error) {
         console.error('Failed to verify email status:', error);
