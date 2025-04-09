@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -240,9 +240,58 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
         return;
       }
       
-      setFiles(selectedFiles);
+      setFiles(prevFiles => [...prevFiles, ...selectedFiles]);
     }
   };
+  
+  // Handler for pasting images from clipboard
+  const handlePaste = useCallback(async (e: ClipboardEvent) => {
+    if (e.clipboardData && e.clipboardData.items) {
+      const items = e.clipboardData.items;
+      
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          e.preventDefault();
+          
+          // Calculate how many more files can be added
+          const maxNewFiles = 2 - existingScreenshots.length - files.length;
+          
+          if (maxNewFiles <= 0) {
+            toast({
+              variant: "destructive",
+              title: "Maximum screenshots reached",
+              description: "Please remove an existing screenshot first before adding a new one"
+            });
+            return;
+          }
+          
+          const file = items[i].getAsFile();
+          if (file) {
+            // Create a new file with a proper name
+            const timestamp = new Date().getTime();
+            const newFile = new File([file], `pasted-image-${timestamp}.png`, { type: file.type });
+            
+            // Add the new file to the existing files
+            setFiles(prevFiles => [...prevFiles, newFile]);
+            
+            toast({
+              title: "Image pasted",
+              description: "Screenshot added from clipboard",
+            });
+          }
+          break;
+        }
+      }
+    }
+  }, [files, existingScreenshots, toast]);
+  
+  // Add and remove paste event listener
+  useEffect(() => {
+    document.addEventListener('paste', handlePaste);
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [handlePaste]);
 
   const handleRemoveExistingScreenshot = (index: number) => {
     setExistingScreenshots(prev => prev.filter((_, i) => i !== index));
@@ -739,15 +788,29 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
                   </label>
                   <p className="pl-1">or drag and drop</p>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 mt-2">
                   PNG, JPG, GIF up to 10MB ({2 - existingScreenshots.length} slots available, compressed to ~100KB each)
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  <span className="font-semibold">Pro Tip:</span> You can also paste screenshots directly from clipboard (Ctrl+V / ⌘+V)
                 </p>
                 {files.length > 0 && (
                   <div className="mt-2">
                     <p className="text-sm text-gray-500">Selected files to add:</p>
-                    <ul className="list-disc pl-5 text-xs text-gray-500">
+                    <ul className="pl-5 text-xs text-gray-500">
                       {files.map((file, index) => (
-                        <li key={index}>{file.name}</li>
+                        <li key={index} className="flex items-center justify-between mb-1">
+                          <span className="truncate">{file.name}</span>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setFiles(files.filter((_, i) => i !== index));
+                            }}
+                            className="ml-2 text-red-500 hover:text-red-700 text-xs"
+                          >
+                            ✕
+                          </button>
+                        </li>
                       ))}
                     </ul>
                   </div>

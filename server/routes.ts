@@ -389,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/journal", async (req: Request, res: Response) => {
+  app.post("/api/journal", upload.array("screenshots", 2), async (req: Request, res: Response) => {
     try {
       // For demo purposes, default to user ID 1
       req.body.userId = 1;
@@ -401,6 +401,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.body.date = new Date();
       }
 
+      // Handle screenshots if any were uploaded
+      if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+        const screenshotFiles = req.files as Express.Multer.File[];
+        req.body.screenshots = screenshotFiles.map(file => file.filename);
+      }
+
       const parsedData = insertJournalEntrySchema.parse(req.body);
       const entry = await storage.createJournalEntry(parsedData);
 
@@ -410,7 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/journal/:id", async (req: Request, res: Response) => {
+  app.put("/api/journal/:id", upload.array("screenshots", 2), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -420,6 +426,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Parse date string to Date object if provided
       if (req.body.date) {
         req.body.date = new Date(req.body.date);
+      }
+
+      // Handle screenshots if any were uploaded
+      if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+        const screenshotFiles = req.files as Express.Multer.File[];
+        req.body.screenshots = screenshotFiles.map(file => file.filename);
       }
 
       const parsedData = insertJournalEntrySchema.partial().parse(req.body);
@@ -472,7 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         total: verifiedSubscribers.length,
         subscribers: verifiedSubscribers.map(sub => ({
           email: sub.email,
-          verifiedAt: sub.updatedAt
+          verifiedAt: sub.verifiedAt || sub.createdAt
         }))
       });
     } catch (err) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -198,17 +198,72 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-      if (selectedFiles.length > 2) {
+      const totalFiles = [...files, ...selectedFiles];
+      
+      if (totalFiles.length > 2) {
         toast({
           variant: "destructive",
           title: "Too many files",
           description: "Maximum of 2 screenshots allowed"
         });
+        // Only take what we can fit (up to 2 total)
+        const remainingSlots = Math.max(0, 2 - files.length);
+        if (remainingSlots > 0) {
+          setFiles([...files, ...selectedFiles.slice(0, remainingSlots)]);
+        }
         return;
       }
-      setFiles(selectedFiles);
+      
+      setFiles(totalFiles);
     }
   };
+  
+  // Handler for pasting images
+  const handlePaste = useCallback(async (e: ClipboardEvent) => {
+    if (e.clipboardData && e.clipboardData.items) {
+      const items = e.clipboardData.items;
+      
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          e.preventDefault();
+          
+          // Only allow pasting if we have less than 2 files
+          if (files.length >= 2) {
+            toast({
+              title: "Maximum files reached",
+              description: "You can only add up to 2 screenshots",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          const file = items[i].getAsFile();
+          if (file) {
+            // Create a new file with a proper name
+            const timestamp = new Date().getTime();
+            const newFile = new File([file], `pasted-image-${timestamp}.png`, { type: file.type });
+            
+            // Add the new file to the existing files
+            setFiles(prevFiles => [...prevFiles, newFile]);
+            
+            toast({
+              title: "Image pasted",
+              description: "Screenshot added from clipboard",
+            });
+          }
+          break;
+        }
+      }
+    }
+  }, [files, toast]);
+  
+  // Add and remove paste event listener
+  useEffect(() => {
+    document.addEventListener('paste', handlePaste);
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [handlePaste]);
 
   const onSubmit = async (data: TradeFormValues) => {
     // Use try-catch to handle any form validation errors that might occur
@@ -604,7 +659,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
           <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
             <div className="space-y-1 text-center">
               <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
-              <div className="flex text-sm text-gray-600">
+              <div className="flex flex-col text-sm text-gray-600">
                 <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
                   <span>Upload files</span>
                   <input
@@ -619,15 +674,29 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
                 </label>
                 <p className="pl-1">or drag and drop</p>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 mt-2">
                 PNG, JPG, GIF up to 10MB (max 2 files, compressed to ~100KB each)
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                <span className="font-semibold">Pro Tip:</span> You can also paste screenshots directly from clipboard (Ctrl+V / ⌘+V)
               </p>
               {files.length > 0 && (
                 <div className="mt-2">
                   <p className="text-sm text-gray-500">Selected files:</p>
-                  <ul className="list-disc pl-5 text-xs text-gray-500">
+                  <ul className="pl-5 text-xs text-gray-500">
                     {files.map((file, index) => (
-                      <li key={index}>{file.name}</li>
+                      <li key={index} className="flex items-center justify-between mb-1">
+                        <span className="truncate">{file.name}</span>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setFiles(files.filter((_, i) => i !== index));
+                          }}
+                          className="ml-2 text-red-500 hover:text-red-700 text-xs"
+                        >
+                          ✕
+                        </button>
+                      </li>
                     ))}
                   </ul>
                 </div>

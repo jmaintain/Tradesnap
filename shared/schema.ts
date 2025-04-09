@@ -86,6 +86,7 @@ export const journalEntries = pgTable("journal_entries", {
   date: timestamp("date").notNull(),
   content: text("content").notNull(),
   mood: text("mood").default("neutral"),
+  screenshots: jsonb("screenshots").$type<string[]>(), // Screenshots URLs or data URLs
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
