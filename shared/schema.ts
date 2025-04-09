@@ -53,12 +53,23 @@ export const trades = pgTable("trades", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertTradeSchema = createInsertSchema(trades).omit({
+// Base schema for trades
+export const baseTradeSchema = createInsertSchema(trades).omit({
   id: true,
   createdAt: true,
   // PnL fields are calculated on the server
   pnlPoints: true,
   pnlDollars: true,
+});
+
+// Schema for trade insert/update with refinement
+export const insertTradeSchema = baseTradeSchema.refine(data => {
+  // If it's an ongoing trade, exit price is not required
+  // If it's not ongoing, exit price is required
+  return data.isOngoing === true || (data.exitPrice !== undefined && data.exitPrice !== null);
+}, {
+  message: "Exit price is required for completed trades",
+  path: ["exitPrice"]
 });
 
 export type InsertTrade = z.infer<typeof insertTradeSchema>;

@@ -111,7 +111,8 @@ const processTradeDate = (dateValue: Date | string | null | undefined): Date => 
 };
 
 // Extend the trade schema for the form with required fields validation
-const tradeFormSchema = insertTradeSchema.extend({
+// Create a native zod schema for the form validation
+const tradeFormSchema = z.object({
   symbol: z.string().min(1, { message: "Symbol is required" }),
   tradeType: z.string().min(1, { message: "Trade type is required" }),
   quantity: z.number().min(1, { message: "Quantity must be at least 1" }),
@@ -119,11 +120,12 @@ const tradeFormSchema = insertTradeSchema.extend({
   exitPrice: z.string().optional(), // Made optional to support ongoing trades
   isOngoing: z.boolean().optional().default(false),
   entryTime: z.string().optional(), // Optional entry time
-  date: z.any().transform(val => {
+  date: z.any().transform((val: unknown) => {
     // Use processTradeDate to handle date properly
-    return processTradeDate(val);
+    return processTradeDate(val as Date | string);
   }),
   screenshots: z.any().optional(),
+  notes: z.string().optional(),
   // Use the user's actual ID from localStorage
   userId: z.number().default(
     () => {
@@ -132,10 +134,10 @@ const tradeFormSchema = insertTradeSchema.extend({
       return storedUserId ? parseInt(storedUserId) : Math.floor(Date.now() / 1000);
     }
   ),
-}).refine(data => {
+}).refine((data: any) => {
   // If it's an ongoing trade, exit price is not required
   // If it's not ongoing, exit price is required
-  return data.isOngoing === true || (data.exitPrice && data.exitPrice.trim() !== '');
+  return data.isOngoing === true || (data.exitPrice !== undefined && data.exitPrice !== '' && data.exitPrice !== null);
 }, {
   message: "Exit price is required for completed trades",
   path: ["exitPrice"]
@@ -342,7 +344,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'date') {
           // Ensure we use a normalized date to avoid timezone issues
-          const normalizedDate = normalizeDate(value);
+          const normalizedDate = normalizeDate(value as Date);
           formData.append(key, format(normalizedDate, 'yyyy-MM-dd'));
         } else if (value !== undefined && value !== null) {
           formData.append(key, value.toString());
@@ -411,7 +413,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       if (includeJournal && data.date) {
         try {
           // Use normalized date for journal entry
-          const normalizedDate = normalizeDate(data.date);
+          const normalizedDate = normalizeDate(data.date as Date);
           const dateStr = format(normalizedDate, 'yyyy-MM-dd');
           
           if (existingJournalEntry) {

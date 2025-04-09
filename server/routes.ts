@@ -6,6 +6,7 @@ import path from "path";
 import fs from "fs";
 import { 
   insertTradeSchema, 
+  baseTradeSchema,
   insertInstrumentSchema, 
   insertSettingsSchema,
   insertJournalEntrySchema,
@@ -279,7 +280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.body.quantity = parseInt(req.body.quantity);
       }
 
-      const parsedData = insertTradeSchema.partial().parse(req.body);
+      const parsedData = baseTradeSchema.parse(req.body);
       const trade = await storage.updateTrade(id, parsedData);
 
       if (!trade) {
