@@ -42,8 +42,10 @@ export const trades = pgTable("trades", {
   tradeType: text("trade_type").notNull(), // "long" or "short"
   quantity: integer("quantity").notNull(),
   entryPrice: numeric("entry_price").notNull(),
-  exitPrice: numeric("exit_price").notNull(),
+  exitPrice: numeric("exit_price"),  // Made optional to support ongoing trades
+  isOngoing: boolean("is_ongoing").default(false), // Flag for ongoing trades
   date: timestamp("date").notNull(),
+  entryTime: text("entry_time"), // Optional entry time
   pnlPoints: numeric("pnl_points"),
   pnlDollars: numeric("pnl_dollars"),
   notes: text("notes"),

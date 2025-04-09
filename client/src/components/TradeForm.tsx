@@ -115,7 +115,9 @@ const tradeFormSchema = insertTradeSchema.extend({
   tradeType: z.string().min(1, { message: "Trade type is required" }),
   quantity: z.number().min(1, { message: "Quantity must be at least 1" }),
   entryPrice: z.string().min(1, { message: "Entry price is required" }),
-  exitPrice: z.string().min(1, { message: "Exit price is required" }),
+  exitPrice: z.string().optional(), // Made optional to support ongoing trades
+  isOngoing: z.boolean().optional().default(false),
+  entryTime: z.string().optional(), // Optional entry time
   date: z.any().transform(val => {
     // Use processTradeDate to handle date properly
     return processTradeDate(val);
@@ -129,6 +131,13 @@ const tradeFormSchema = insertTradeSchema.extend({
       return storedUserId ? parseInt(storedUserId) : Math.floor(Date.now() / 1000);
     }
   ),
+}).refine(data => {
+  // If it's an ongoing trade, exit price is not required
+  // If it's not ongoing, exit price is required
+  return data.isOngoing === true || (data.exitPrice && data.exitPrice.trim() !== '');
+}, {
+  message: "Exit price is required for completed trades",
+  path: ["exitPrice"]
 });
 
 type TradeFormValues = z.infer<typeof tradeFormSchema>;
@@ -147,6 +156,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
   const [journalContent, setJournalContent] = useState<string>('');
   const [journalMood, setJournalMood] = useState<string>('neutral');
   const [includeJournal, setIncludeJournal] = useState<boolean>(false);
+  const [isOngoing, setIsOngoing] = useState<boolean>(false);
 
   // Fetch instruments for the dropdown
   const { data: instruments = [] } = useQuery({
@@ -171,6 +181,8 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
       quantity: 1,
       entryPrice: '',
       exitPrice: '',
+      isOngoing: false,
+      entryTime: '',
       date: normalizeDate(new Date()),
       notes: '',
     }
@@ -500,13 +512,65 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
           
           <FormField
             control={form.control}
+            name="entryTime"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Entry Time (Optional)</FormLabel>
+                <FormControl>
+                  <Input type="time" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
             name="exitPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Exit Price</FormLabel>
+                <FormLabel className={isOngoing ? "" : "after:content-['*'] after:ml-0.5 after:text-red-500"}>
+                  Exit Price {isOngoing && "(Optional for ongoing trades)"}
+                </FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} />
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    {...field} 
+                    disabled={isOngoing}
+                  />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="isOngoing"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-6">
+                <FormControl>
+                  <Checkbox 
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      // Update the form field
+                      field.onChange(checked);
+                      // Also update our state for UI changes
+                      setIsOngoing(!!checked);
+                      
+                      // If checked, clear exit price, if unchecked, reset it
+                      if (checked) {
+                        form.setValue('exitPrice', '');
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormLabel className="text-sm font-medium leading-none cursor-pointer">
+                  This is an ongoing/active trade (no exit price yet)
+                </FormLabel>
                 <FormMessage />
               </FormItem>
             )}
