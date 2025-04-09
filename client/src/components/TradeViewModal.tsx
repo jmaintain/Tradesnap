@@ -226,7 +226,7 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[900px] w-[95vw] max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className="sm:max-w-[900px] w-[95vw] p-0">
           <div className="p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="text-xl sm:text-2xl font-bold">Trade Calendar</DialogTitle>

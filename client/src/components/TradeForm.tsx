@@ -656,9 +656,9 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
         
         <div>
           <FormLabel className="block mb-2">Screenshots (Optional)</FormLabel>
-          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+          <div className="mt-1 flex justify-center px-4 sm:px-6 pt-4 pb-4 sm:pt-5 sm:pb-6 border-2 border-gray-300 border-dashed rounded-md">
             <div className="space-y-1 text-center">
-              <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
+              <UploadCloud className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
               <div className="flex flex-col text-sm text-gray-600">
                 <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
                   <span>Upload files</span>
@@ -672,13 +672,13 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
                     onChange={handleFileChange}
                   />
                 </label>
-                <p className="pl-1">or drag and drop</p>
+                <p className="pl-1 text-xs sm:text-sm">or drag and drop</p>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                PNG, JPG, GIF up to 10MB (max 2 files, compressed to ~100KB each)
+                PNG, JPG, GIF up to 10MB (max 2 files)
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                <span className="font-semibold">Pro Tip:</span> You can also paste screenshots directly from clipboard (Ctrl+V / ⌘+V)
+                <span className="font-semibold">Pro Tip:</span> You can paste screenshots directly (Ctrl+V / ⌘+V)
               </p>
               {files.length > 0 && (
                 <div className="mt-2">
@@ -768,20 +768,21 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
           </AccordionItem>
         </Accordion>
         
-        <div className="pt-3 border-t border-gray-200 mt-4">
-          <div className="flex justify-end">
+        <div className="sticky bottom-0 pt-3 border-t border-gray-200 mt-4 bg-white pb-1">
+          <div className="flex justify-end gap-3 p-2 sm:p-0">
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
               disabled={isSubmitting}
+              className="text-xs sm:text-sm px-3 sm:px-4 h-9"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="ml-3"
               disabled={isSubmitting}
+              className="text-xs sm:text-sm px-3 sm:px-4 h-9"
             >
               {isSubmitting ? 'Saving...' : 'Save Trade'}
             </Button>

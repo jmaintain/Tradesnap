@@ -770,10 +770,10 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
           
           {/* New Screenshots Upload */}
           {existingScreenshots.length < 2 && (
-            <div className="mt-3 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+            <div className="mt-3 flex justify-center px-4 sm:px-6 pt-4 pb-4 sm:pt-5 sm:pb-6 border-2 border-gray-300 border-dashed rounded-md">
               <div className="space-y-1 text-center">
-                <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
-                <div className="flex text-sm text-gray-600">
+                <UploadCloud className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
+                <div className="flex flex-col text-sm text-gray-600">
                   <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
                     <span>Upload files</span>
                     <input
@@ -786,13 +786,13 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
                       onChange={handleFileChange}
                     />
                   </label>
-                  <p className="pl-1">or drag and drop</p>
+                  <p className="pl-1 text-xs sm:text-sm">or drag and drop</p>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  PNG, JPG, GIF up to 10MB ({2 - existingScreenshots.length} slots available, compressed to ~100KB each)
+                  PNG, JPG, GIF up to 10MB ({2 - existingScreenshots.length} slots available)
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  <span className="font-semibold">Pro Tip:</span> You can also paste screenshots directly from clipboard (Ctrl+V / ⌘+V)
+                  <span className="font-semibold">Pro Tip:</span> You can paste screenshots directly (Ctrl+V / ⌘+V)
                 </p>
                 {files.length > 0 && (
                   <div className="mt-2">
@@ -884,20 +884,20 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
         </Accordion>
 
         <div className="sticky bottom-0 pt-3 mt-4 border-t border-gray-200 bg-white">
-          <div className="flex justify-end space-x-3 py-2">
+          <div className="flex justify-end gap-3 p-2 sm:p-0 sm:py-2">
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
               disabled={isSubmitting}
-              className="px-4"
+              className="text-xs sm:text-sm px-3 sm:px-4 h-9"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="px-4"
+              className="text-xs sm:text-sm px-3 sm:px-4 h-9"
             >
               {isSubmitting ? 'Saving...' : 'Update Trade'}
             </Button>
