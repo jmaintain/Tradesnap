@@ -129,7 +129,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                   <TableCell>{trade.entryPrice}</TableCell>
                   <TableCell>{trade.exitPrice}</TableCell>
                   <TableCell className={`font-medium ${profitLossClass}`}>
-                    {isProfitable ? '+' : ''}{trade.pnlPoints}
+                    {isProfitable ? '+' : ''}{parseFloat(trade.pnlPoints || '0').toFixed(0)}
                   </TableCell>
                   <TableCell className={`font-medium ${profitLossClass}`}>
                     {isProfitable ? '+' : ''}${Math.abs(parseFloat(trade.pnlDollars || '0')).toFixed(2)}
@@ -188,7 +188,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                   <span className="text-gray-500">Quantity:</span> {trade.quantity}
                 </div>
                 <div>
-                  <span className="text-gray-500">P&L Points:</span> <span className={profitLossClass}>{isProfitable ? '+' : ''}{trade.pnlPoints}</span>
+                  <span className="text-gray-500">P&L Points:</span> <span className={profitLossClass}>{isProfitable ? '+' : ''}{parseFloat(trade.pnlPoints || '0').toFixed(0)}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Entry:</span> {trade.entryPrice}

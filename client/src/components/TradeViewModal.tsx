@@ -429,7 +429,7 @@ const TradeViewModal: React.FC<TradeViewModalProps> = ({
                           <div>
                             <p className="text-xs text-gray-500">P&L (Points)</p>
                             <p className={cn("font-medium text-sm sm:text-base", isProfitable ? "text-green-600" : "text-red-600")}>
-                              {isProfitable ? '+' : ''}{trade.pnlPoints}
+                              {isProfitable ? '+' : ''}{parseFloat(trade.pnlPoints || '0').toFixed(0)}
                             </p>
                           </div>
                         </div>
