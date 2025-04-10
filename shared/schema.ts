@@ -43,11 +43,13 @@ export const trades = pgTable("trades", {
   quantity: integer("quantity").notNull(),
   entryPrice: numeric("entry_price").notNull(),
   exitPrice: numeric("exit_price"),  // Made optional to support ongoing trades
+  stopLossPrice: numeric("stop_loss_price"), // Stop loss price for risk calculation
   isOngoing: boolean("is_ongoing").default(false), // Flag for ongoing trades
   date: timestamp("date").notNull(),
   entryTime: text("entry_time"), // Optional entry time
   pnlPoints: numeric("pnl_points"),
   pnlDollars: numeric("pnl_dollars"),
+  riskRewardRatio: numeric("risk_reward_ratio"), // Added risk to reward ratio field
   notes: text("notes"),
   screenshots: jsonb("screenshots").$type<string[]>(), // URLs to the screenshots
   createdAt: timestamp("created_at").defaultNow(),
