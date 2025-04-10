@@ -42,28 +42,24 @@ const AllTrades: React.FC = () => {
   const [selectedTradeIds, setSelectedTradeIds] = useState<number[]>([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
-  // Fetch all trades
+  // Get the current user ID from localStorage
+  const userId = localStorage.getItem('userId') || '0';
+  
+  // Fetch all trades for the current user
   const { data: trades = [], isLoading } = useQuery<Trade[]>({
-    queryKey: ['/api/trades'],
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Error loading trades",
-        description: error instanceof Error ? error.message : "An error occurred"
-      });
-    }
+    queryKey: [`/api/trades?userId=${userId}`]
   });
 
   // Delete trade mutation
   const deleteTradeMutation = useMutation({
     mutationFn: async (tradeId: number) => {
-      await apiRequest(`/api/trades/${tradeId}`, { method: 'DELETE' } as RequestInit);
+      await apiRequest('DELETE', `/api/trades/${tradeId}`);
       // Also delete from IndexedDB for consistency
       await deleteTrade(tradeId);
       return tradeId;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trades?userId=${userId}`] });
       refreshInfo(); // Update storage info
     }
   });
@@ -92,7 +88,7 @@ const AllTrades: React.FC = () => {
   });
 
   // Filter trades based on search term
-  const filteredTrades = trades.filter(trade => 
+  const filteredTrades = trades.filter((trade: Trade) => 
     trade.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trade.notes?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -132,7 +128,7 @@ const AllTrades: React.FC = () => {
     const headers = ['Date', 'Symbol', 'Type', 'Quantity', 'Entry Price', 'Exit Price', 'P&L (Pts)', 'P&L ($)', 'Notes'];
     const csvContent = [
       headers.join(','),
-      ...filteredTrades.map(trade => [
+      ...filteredTrades.map((trade: Trade) => [
         new Date(trade.date).toISOString().split('T')[0],
         trade.symbol,
         trade.tradeType,
