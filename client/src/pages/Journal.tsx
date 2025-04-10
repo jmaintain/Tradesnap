@@ -508,17 +508,28 @@ const JournalPage = () => {
                           <CardContent>
                             <div className="whitespace-pre-wrap">{entry.content}</div>
                             
+                            {/* Display screenshots if available */}
                             {entry.screenshots && entry.screenshots.length > 0 && (
                               <div className="mt-4">
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {entry.screenshots.map((src, index) => (
+                                <div className="flex flex-wrap gap-2">
+                                  {entry.screenshots.map((screenshot, index) => (
                                     <div key={index} className="relative group">
-                                      <img 
-                                        src={src} 
-                                        alt={`Journal screenshot ${index + 1}`} 
-                                        className="w-24 h-24 object-cover rounded border cursor-pointer" 
-                                        onClick={() => viewImage(src)}
+                                      <img
+                                        src={screenshot}
+                                        alt={`Screenshot ${index + 1}`}
+                                        className="w-24 h-24 object-cover rounded border cursor-pointer"
+                                        onClick={() => viewImage(screenshot)}
                                       />
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          viewImage(screenshot);
+                                        }}
+                                        className="absolute bottom-1 right-1 bg-background text-foreground rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <ImageIcon className="h-3 w-3" />
+                                      </button>
                                     </div>
                                   ))}
                                 </div>
