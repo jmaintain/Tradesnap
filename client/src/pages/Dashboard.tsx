@@ -22,7 +22,7 @@ import InstrumentTable from '@/components/ui/instrument-table';
 import NewTradeModal from '@/components/NewTradeModal';
 import TradeViewModal from '@/components/TradeViewModal';
 
-import { Trade } from '@shared/schema';
+import { Trade, Instrument } from '@shared/schema';
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
@@ -39,7 +39,7 @@ const Dashboard: React.FC = () => {
   });
 
   // Fetch instruments
-  const { data: instruments = [], isLoading: isLoadingInstruments } = useQuery({
+  const { data: instruments = [], isLoading: isLoadingInstruments } = useQuery<Instrument[]>({
     queryKey: ['/api/instruments']
   });
 
