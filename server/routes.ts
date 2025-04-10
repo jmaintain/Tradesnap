@@ -135,8 +135,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Trades endpoints
   app.get("/api/trades", async (req: Request, res: Response) => {
     try {
-      // For demo purposes, default to user ID 1
-      const userId = 1;
+      // Get userId from query parameter, or fall back to default if not provided
+      const userIdParam = req.query.userId;
+      const userId = userIdParam ? parseInt(userIdParam as string) : 0;
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      
       const trades = await storage.getTrades(userId);
       res.json(trades);
     } catch (err) {
@@ -198,8 +204,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.body.quantity = parseInt(req.body.quantity);
       }
 
-      // For demo purposes, default to user ID 1
-      req.body.userId = 1;
+      // Get userId from body, or use 0 (represents unauthenticated user) as fallback
+      const userIdParam = req.body.userId;
+      if (!userIdParam) {
+        req.body.userId = 0;
+      } else if (typeof userIdParam === 'string') {
+        req.body.userId = parseInt(userIdParam);
+      }
 
       const parsedData = insertTradeSchema.parse(req.body);
       const trade = await storage.createTrade(parsedData);
