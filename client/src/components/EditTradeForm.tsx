@@ -118,6 +118,8 @@ const tradeFormSchema = z.object({
   quantity: z.number().min(1, { message: "Quantity must be at least 1" }),
   entryPrice: z.string().min(1, { message: "Entry price is required" }),
   exitPrice: z.string().optional(), // Made optional to support ongoing trades
+  stopLossPrice: z.string().optional(), // Optional stop loss price
+  riskRewardRatio: z.number().optional(), // Optional risk/reward ratio
   isOngoing: z.boolean().optional().default(false),
   entryTime: z.string().optional(), // Optional entry time
   date: z.any().transform((val: unknown) => {
@@ -169,6 +171,9 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
   
   // Handle ongoing trade status
   const [isOngoing, setIsOngoing] = useState<boolean>(trade.isOngoing || false);
+  const [riskRewardRatio, setRiskRewardRatio] = useState<number | null>(
+    typeof trade.riskRewardRatio === 'number' ? trade.riskRewardRatio : null
+  );
   
   // Journal entry states
   const [includeJournal, setIncludeJournal] = useState(false);
@@ -211,6 +216,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       quantity: trade.quantity || 1,
       entryPrice: trade.entryPrice || '',
       exitPrice: trade.exitPrice || '',
+      stopLossPrice: trade.stopLossPrice || '',
       isOngoing: trade.isOngoing || false,
       entryTime: trade.entryTime || '',
       date: initialDate,
@@ -294,6 +300,65 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       document.removeEventListener('paste', handlePaste);
     };
   }, [handlePaste]);
+  
+  // Function to calculate risk/reward ratio
+  const calculateRiskReward = () => {
+    const entryPrice = parseFloat(form.getValues("entryPrice") || "0");
+    const exitPrice = parseFloat(form.getValues("exitPrice") || "0");
+    const stopLossPrice = parseFloat(form.getValues("stopLossPrice") || "0");
+    const tradeType = form.getValues("tradeType");
+    
+    if (!entryPrice || !exitPrice || !stopLossPrice || isOngoing) {
+      setRiskRewardRatio(null);
+      return;
+    }
+    
+    let risk, reward;
+    
+    if (tradeType === "long") {
+      // For long trades, risk is entry - stop loss, reward is exit - entry
+      risk = Math.abs(entryPrice - stopLossPrice);
+      reward = Math.abs(exitPrice - entryPrice);
+    } else {
+      // For short trades, risk is stop loss - entry, reward is entry - exit
+      risk = Math.abs(stopLossPrice - entryPrice);
+      reward = Math.abs(entryPrice - exitPrice);
+    }
+    
+    if (risk <= 0 || reward <= 0) {
+      setRiskRewardRatio(null);
+      return;
+    }
+    
+    // Risk/Reward ratio is usually expressed as 1:X
+    const ratio = reward / risk;
+    setRiskRewardRatio(ratio);
+    
+    // Set the value in the form so it's submitted
+    form.setValue("riskRewardRatio", ratio);
+    
+    return ratio;
+  };
+  
+  // Function to display risk/reward ratio
+  const calculateRiskRewardDisplay = () => {
+    const ratio = calculateRiskReward();
+    if (!ratio) {
+      return "N/A";
+    }
+    return `1:${ratio.toFixed(2)}`;
+  };
+  
+  // Watch for changes in fields that affect risk/reward calculation
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "entryPrice" || name === "exitPrice" || name === "stopLossPrice" || name === "tradeType") {
+        calculateRiskReward();
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
 
   const handleRemoveExistingScreenshot = (index: number) => {
     setExistingScreenshots(prev => prev.filter((_, i) => i !== index));
