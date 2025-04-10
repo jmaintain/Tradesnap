@@ -343,8 +343,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Settings endpoints
   app.get("/api/settings", async (req: Request, res: Response) => {
     try {
-      // For demo purposes, default to user ID 1
-      const userId = 1;
+      // Get userId from query parameter, or fall back to default if not provided
+      const userIdParam = req.query.userId;
+      const userId = userIdParam ? parseInt(userIdParam as string) : 0;
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      
       const userSettings = await storage.getSettings(userId);
 
       if (!userSettings) {
@@ -364,8 +370,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/settings", async (req: Request, res: Response) => {
     try {
-      // For demo purposes, default to user ID 1
-      req.body.userId = 1;
+      // Get userId from body, or use 0 (represents unauthenticated user) as fallback
+      const userIdParam = req.body.userId;
+      if (!userIdParam) {
+        req.body.userId = 0;
+      } else if (typeof userIdParam === 'string') {
+        req.body.userId = parseInt(userIdParam);
+      }
 
       const parsedData = insertSettingsSchema.parse(req.body);
       const settings = await storage.createOrUpdateSettings(parsedData);
@@ -379,8 +390,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Journal entry endpoints
   app.get("/api/journal", async (req: Request, res: Response) => {
     try {
-      // For demo purposes, default to user ID 1
-      const userId = 1;
+      // Get userId from query parameter, or fall back to default if not provided
+      const userIdParam = req.query.userId;
+      const userId = userIdParam ? parseInt(userIdParam as string) : 0;
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      
       const entries = await storage.getJournalEntries(userId);
       res.json(entries);
     } catch (err) {
@@ -390,8 +407,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/journal/date/:date", async (req: Request, res: Response) => {
     try {
-      // For demo purposes, default to user ID 1
-      const userId = 1;
+      // Get userId from query parameter, or fall back to default if not provided
+      const userIdParam = req.query.userId;
+      const userId = userIdParam ? parseInt(userIdParam as string) : 0;
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      
       const date = new Date(req.params.date);
 
       if (isNaN(date.getTime())) {
@@ -425,8 +448,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/journal", upload.array("screenshots", 2), async (req: Request, res: Response) => {
     try {
-      // For demo purposes, default to user ID 1
-      req.body.userId = 1;
+      // Get userId from body, or use 0 (represents unauthenticated user) as fallback
+      const userIdParam = req.body.userId;
+      if (!userIdParam) {
+        req.body.userId = 0;
+      } else if (typeof userIdParam === 'string') {
+        req.body.userId = parseInt(userIdParam);
+      }
 
       // Parse date string to Date object if provided
       if (req.body.date) {
