@@ -311,11 +311,11 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
   
   // Function to display risk/reward ratio
   const calculateRiskRewardDisplay = () => {
-    const ratio = calculateRiskReward();
-    if (!ratio) {
+    // Don't call calculateRiskReward() here to avoid infinite loop
+    if (!riskRewardRatio) {
       return "N/A";
     }
-    return `1:${ratio.toFixed(2)}`;
+    return `1:${riskRewardRatio.toFixed(2)}`;
   };
   
   // Watch for changes in fields that affect risk/reward calculation

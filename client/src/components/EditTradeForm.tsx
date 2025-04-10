@@ -217,7 +217,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       entryPrice: trade.entryPrice || '',
       exitPrice: trade.exitPrice || '',
       stopLossPrice: trade.stopLossPrice || '',
-      riskRewardRatio: trade.riskRewardRatio || undefined,
+      riskRewardRatio: trade.riskRewardRatio ? parseFloat(trade.riskRewardRatio.toString()) : undefined,
       isOngoing: trade.isOngoing || false,
       entryTime: trade.entryTime || '',
       date: initialDate,
@@ -350,11 +350,11 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
   
   // Function to display risk/reward ratio
   const calculateRiskRewardDisplay = () => {
-    const ratio = calculateRiskReward();
-    if (!ratio) {
+    // Don't call calculateRiskReward() here to avoid infinite loop
+    if (!riskRewardRatio) {
       return "N/A";
     }
-    return `1:${ratio.toFixed(2)}`;
+    return `1:${riskRewardRatio.toFixed(2)}`;
   };
   
   // Watch for changes in fields that affect risk/reward calculation
