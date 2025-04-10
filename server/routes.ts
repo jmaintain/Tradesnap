@@ -490,10 +490,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.body.date = new Date(req.body.date);
       }
 
-      // Handle screenshots if any were uploaded
+      // Handle screenshots
+      let screenshots: string[] = [];
+      
+      // Get existing screenshots if provided
+      if (req.body.existingScreenshots) {
+        // Handle both array and comma-delimited string formats
+        if (Array.isArray(req.body.existingScreenshots)) {
+          screenshots = req.body.existingScreenshots;
+        } else if (typeof req.body.existingScreenshots === 'string') {
+          screenshots = [req.body.existingScreenshots];
+        }
+      }
+      
+      // Add newly uploaded screenshots
       if (req.files && Array.isArray(req.files) && req.files.length > 0) {
         const screenshotFiles = req.files as Express.Multer.File[];
-        req.body.screenshots = screenshotFiles.map(file => file.filename);
+        screenshots = [...screenshots, ...screenshotFiles.map(file => file.filename)];
+      }
+      
+      // Store the final screenshots array
+      if (screenshots.length > 0) {
+        req.body.screenshots = screenshots;
       }
 
       const parsedData = insertJournalEntrySchema.partial().parse(req.body);
