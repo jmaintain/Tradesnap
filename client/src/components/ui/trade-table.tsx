@@ -130,7 +130,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                   <TableCell>{trade.entryPrice}</TableCell>
                   <TableCell>{trade.exitPrice}</TableCell>
                   <TableCell>
-                    {trade.riskRewardRatio ? `${trade.riskRewardRatio}:1` : '-'}
+                    {trade.riskRewardRatio ? `${Number(trade.riskRewardRatio).toFixed(1)}:1` : '-'}
                   </TableCell>
                   <TableCell className={`font-medium ${profitLossClass}`}>
                     {isProfitable ? '+' : ''}{parseFloat(trade.pnlPoints || '0').toFixed(0)}
@@ -201,7 +201,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                   <span className="text-gray-500">Exit:</span> {trade.exitPrice}
                 </div>
                 <div>
-                  <span className="text-gray-500">Risk/Reward:</span> {trade.riskRewardRatio ? `${trade.riskRewardRatio}:1` : '-'}
+                  <span className="text-gray-500">Risk/Reward:</span> {trade.riskRewardRatio ? `${Number(trade.riskRewardRatio).toFixed(1)}:1` : '-'}
                 </div>
               </div>
               
