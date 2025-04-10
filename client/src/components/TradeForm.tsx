@@ -116,6 +116,7 @@ const tradeFormSchema = z.object({
   quantity: z.number().min(1, { message: "Quantity must be at least 1" }),
   entryPrice: z.string().min(1, { message: "Entry price is required" }),
   exitPrice: z.string().optional(), // Made optional to support ongoing trades
+  stopLossPrice: z.string().optional(), // Stop loss price for risk calculation
   isOngoing: z.boolean().optional().default(false),
   entryTime: z.string().optional(), // Optional entry time
   date: z.any().transform((val: unknown) => {
@@ -124,6 +125,7 @@ const tradeFormSchema = z.object({
   }),
   screenshots: z.any().optional(),
   notes: z.string().optional(),
+  riskRewardRatio: z.number().optional(), // Will be calculated based on entry, exit, and stop loss prices
   // Use the user's actual ID from localStorage
   userId: z.number().default(
     () => {
@@ -158,6 +160,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
   const [journalMood, setJournalMood] = useState<string>('neutral');
   const [includeJournal, setIncludeJournal] = useState<boolean>(false);
   const [isOngoing, setIsOngoing] = useState<boolean>(false);
+  const [riskRewardRatio, setRiskRewardRatio] = useState<number | null>(null);
 
   // Fetch instruments for the dropdown
   const { data: instruments = [] } = useQuery({
@@ -182,6 +185,7 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
       quantity: 1,
       entryPrice: '',
       exitPrice: '',
+      stopLossPrice: '',
       isOngoing: false,
       entryTime: '',
       date: normalizeDate(new Date()),
@@ -265,6 +269,65 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
       document.removeEventListener('paste', handlePaste);
     };
   }, [handlePaste]);
+  
+  // Function to calculate risk/reward ratio
+  const calculateRiskReward = () => {
+    const entryPrice = parseFloat(form.getValues("entryPrice") || "0");
+    const exitPrice = parseFloat(form.getValues("exitPrice") || "0");
+    const stopLossPrice = parseFloat(form.getValues("stopLossPrice") || "0");
+    const tradeType = form.getValues("tradeType");
+    
+    if (!entryPrice || !exitPrice || !stopLossPrice || isOngoing) {
+      setRiskRewardRatio(null);
+      return;
+    }
+    
+    let risk, reward;
+    
+    if (tradeType === "long") {
+      // For long trades, risk is entry - stop loss, reward is exit - entry
+      risk = Math.abs(entryPrice - stopLossPrice);
+      reward = Math.abs(exitPrice - entryPrice);
+    } else {
+      // For short trades, risk is stop loss - entry, reward is entry - exit
+      risk = Math.abs(stopLossPrice - entryPrice);
+      reward = Math.abs(entryPrice - exitPrice);
+    }
+    
+    if (risk <= 0 || reward <= 0) {
+      setRiskRewardRatio(null);
+      return;
+    }
+    
+    // Risk/Reward ratio is usually expressed as 1:X
+    const ratio = reward / risk;
+    setRiskRewardRatio(ratio);
+    
+    // Set the value in the form so it's submitted
+    form.setValue("riskRewardRatio", ratio);
+    
+    return ratio;
+  };
+  
+  // Function to display risk/reward ratio
+  const calculateRiskRewardDisplay = () => {
+    const ratio = calculateRiskReward();
+    if (!ratio) {
+      return "N/A";
+    }
+    return `1:${ratio.toFixed(2)}`;
+  };
+  
+  // Watch for changes in fields that affect risk/reward calculation
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "entryPrice" || name === "exitPrice" || name === "stopLossPrice" || name === "tradeType") {
+        calculateRiskReward();
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
 
   const onSubmit = async (data: TradeFormValues) => {
     // Use try-catch to handle any form validation errors that might occur
@@ -605,9 +668,30 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
           
           <FormField
             control={form.control}
+            name="stopLossPrice"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Stop Loss Price</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    {...field} 
+                    placeholder="Enter stop loss price" 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
             name="isOngoing"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-6">
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                 <FormControl>
                   <Checkbox 
                     checked={field.value}
@@ -631,6 +715,16 @@ const TradeForm: React.FC<TradeFormProps> = ({ onSubmitSuccess, onCancel }) => {
               </FormItem>
             )}
           />
+          
+          {/* Display calculated risk/reward ratio if we have the necessary values */}
+          {!isOngoing && form.watch('entryPrice') && form.watch('exitPrice') && form.watch('stopLossPrice') && (
+            <div className="flex items-center justify-end space-x-2">
+              <span className="text-sm font-medium">Risk/Reward Ratio:</span>
+              <span className="text-sm font-bold">
+                {calculateRiskRewardDisplay()}
+              </span>
+            </div>
+          )}
         </div>
         
         <FormField
