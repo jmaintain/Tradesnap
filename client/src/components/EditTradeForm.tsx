@@ -541,6 +541,10 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       // Invalidate trades query to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
       
+      // Also invalidate user-specific trades query used in Dashboard
+      const userId = localStorage.getItem('userId') || '0';
+      queryClient.invalidateQueries({ queryKey: [`/api/trades?userId=${userId}`] });
+      
       // Refresh storage info to update usage indicators
       console.log("Refreshing storage info after trade update");
       await refreshStorageInfo();
