@@ -217,12 +217,20 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
       entryPrice: trade.entryPrice || '',
       exitPrice: trade.exitPrice || '',
       stopLossPrice: trade.stopLossPrice || '',
+      riskRewardRatio: trade.riskRewardRatio || undefined,
       isOngoing: trade.isOngoing || false,
       entryTime: trade.entryTime || '',
       date: initialDate,
       notes: trade.notes || '',
     },
   });
+  
+  // Calculate risk/reward ratio when component mounts
+  useEffect(() => {
+    if (!isOngoing && trade.entryPrice && trade.exitPrice && trade.stopLossPrice) {
+      calculateRiskReward();
+    }
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -747,9 +755,30 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
           
           <FormField
             control={form.control}
+            name="stopLossPrice"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Stop Loss Price</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    {...field} 
+                    placeholder="Enter stop loss price" 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
             name="isOngoing"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-6">
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                 <FormControl>
                   <Checkbox 
                     checked={field.value}
@@ -773,6 +802,16 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
               </FormItem>
             )}
           />
+          
+          {/* Display calculated risk/reward ratio if we have the necessary values */}
+          {!isOngoing && form.watch('entryPrice') && form.watch('exitPrice') && form.watch('stopLossPrice') && (
+            <div className="flex items-center justify-end space-x-2">
+              <span className="text-sm font-medium">Risk/Reward Ratio:</span>
+              <span className="text-sm font-bold">
+                {calculateRiskRewardDisplay()}
+              </span>
+            </div>
+          )}
         </div>
         
         <FormField
