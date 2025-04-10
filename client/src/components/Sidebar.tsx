@@ -14,6 +14,9 @@ const Sidebar = () => {
     }
   }, []);
   
+  // Get wouter's navigate function
+  const [, navigate] = useLocation();
+  
   // Handle logo click - redirect to dashboard if email is registered
   const handleLogoClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -21,12 +24,12 @@ const Sidebar = () => {
     
     if (email) {
       // If email is registered, redirect to dashboard
-      window.location.href = '/dashboard';
+      navigate('/dashboard');
     } else {
       // Otherwise go to landing page
-      window.location.href = '/';
+      navigate('/');
     }
-  }, []);
+  }, [navigate]);
 
   const isActive = (path: string) => {
     return location === path;
@@ -38,12 +41,6 @@ const Sidebar = () => {
       path: '/dashboard', 
       icon: <BarChart3 className="h-5 w-5" />,
       active: isActive('/dashboard')
-    },
-    {
-      name: 'Home',
-      path: '/',
-      icon: <ChartLine className="h-5 w-5" />,
-      active: isActive('/')
     },
     { 
       name: 'Trades', 
@@ -75,16 +72,16 @@ const Sidebar = () => {
     <div className="hidden md:flex md:flex-shrink-0">
       <div className="flex flex-col w-64 bg-gray-800">
         <div className="flex items-center h-16 px-4 bg-gray-900">
-          <a href="/" className="flex items-center" onClick={handleLogoClick}>
+          <div className="flex items-center cursor-pointer" onClick={handleLogoClick}>
             <ChartLine className="h-6 w-6 text-blue-500 mr-2" />
             <span className="text-white font-semibold text-lg">TradeSnap</span>
-          </a>
+          </div>
         </div>
         <div className="flex flex-col flex-grow overflow-y-auto">
           <nav className="flex-1 px-2 py-4 space-y-1">
             {navItems.map((item) => (
               <Link key={item.path} href={item.path}>
-                <a className={`flex items-center px-2 py-2 text-sm font-medium rounded-md group ${
+                <div className={`flex items-center px-2 py-2 text-sm font-medium rounded-md group cursor-pointer ${
                   item.active
                     ? 'text-white bg-gray-700'
                     : 'text-gray-300 hover:bg-gray-700 hover:text-white'
@@ -93,7 +90,7 @@ const Sidebar = () => {
                     {item.icon}
                   </div>
                   {item.name}
-                </a>
+                </div>
               </Link>
             ))}
           </nav>
