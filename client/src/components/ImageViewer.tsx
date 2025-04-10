@@ -1,71 +1,47 @@
+import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import * as React from 'react';
-import { createPortal } from 'react-dom';
 
 interface ImageViewerProps {
   imageSrc: string;
   onClose: () => void;
 }
 
-const ImageViewer: React.FC<ImageViewerProps> = ({ imageSrc, onClose }) => {
-  // Create a handler that stops propagation
-  const handleContentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
-  const handleClose = (e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
-    onClose();
-  };
-
-  // Handle escape key press
-  React.useEffect(() => {
+export const ImageViewer: React.FC<ImageViewerProps> = ({ imageSrc, onClose }) => {
+  // Add keyboard event listener to close on Escape key
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        e.preventDefault();
         onClose();
       }
     };
-
+    
     window.addEventListener('keydown', handleKeyDown);
+    
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [onClose]);
 
-  // Use a portal to render this outside the normal DOM hierarchy
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
-      onClick={handleClose}
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div 
-        className="relative max-h-[90vh] max-w-[95vw] sm:max-w-[90vw] overflow-auto" 
-        onClick={handleContentClick}
-      >
-        <Button 
-          variant="ghost" 
-          size="icon"
-          className="absolute top-2 right-2 bg-black/40 hover:bg-black/60 rounded-full z-10"
-          onClick={handleClose}
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center" onClick={onClose}>
+      <div className="relative max-w-full max-h-full p-4">
+        <button 
+          className="absolute top-4 right-4 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
         >
-          <X className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-        </Button>
+          <X className="h-6 w-6" />
+        </button>
         <img 
           src={imageSrc} 
-          alt="Enlarged screenshot" 
-          className="max-h-[85vh] max-w-[95vw] sm:max-w-[90vw] object-contain bg-white/5 backdrop-blur-sm rounded-lg shadow-xl"
+          alt="Full-size view" 
+          className="max-w-full max-h-[90vh] object-contain rounded-md"
+          onClick={(e) => e.stopPropagation()}
         />
       </div>
-    </div>,
-    document.body
+    </div>
   );
 };
 

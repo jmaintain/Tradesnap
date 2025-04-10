@@ -20,6 +20,7 @@ import { Trade } from '@shared/schema';
 import { DayProps } from 'react-day-picker';
 import { getDateKey } from '@/lib/date-utils';
 import { processImageFile } from '@/lib/imageProcessing';
+import ImageViewer from '@/components/ImageViewer';
 
 interface JournalEntry {
   id: number;
@@ -632,6 +633,71 @@ const JournalPage = () => {
                 placeholder="Write your journal entry here..."
               />
             </div>
+
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="screenshots" className="text-right pt-2">
+                Screenshots
+              </Label>
+              <div className="col-span-3 space-y-4">
+                <div className="flex flex-col">
+                  <div className="text-sm text-muted-foreground mb-2">
+                    Upload up to 2 screenshots. You can also paste screenshots from your clipboard.
+                  </div>
+                  
+                  {/* Screenshot Upload Button */}
+                  <div className="flex items-center gap-4">
+                    <label
+                      htmlFor="screenshot-upload"
+                      className={cn(
+                        "flex h-9 items-center justify-center rounded-md border border-input bg-background px-3",
+                        "text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground",
+                        "cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2",
+                        "focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50",
+                        "disabled:pointer-events-none"
+                      )}
+                    >
+                      <UploadCloud className="mr-2 h-4 w-4" />
+                      Choose File
+                    </label>
+                    <input
+                      id="screenshot-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      or paste from clipboard (Ctrl/Cmd+V)
+                    </span>
+                  </div>
+                  
+                  {/* Preview of Selected Files */}
+                  {files.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">Selected Screenshots</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {files.map((file, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Screenshot ${index + 1}`}
+                              className="w-24 h-24 object-cover rounded border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeFile(index)}
+                              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setShowNewEntryDialog(false)}>
@@ -640,9 +706,9 @@ const JournalPage = () => {
             <Button 
               type="submit" 
               onClick={handleCreateEntry}
-              disabled={!journalContent.trim() || createMutation.isPending}
+              disabled={!journalContent.trim() || isSubmitting}
             >
-              {createMutation.isPending ? 'Saving...' : 'Save Entry'}
+              {isSubmitting ? 'Saving...' : 'Save Entry'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -685,6 +751,103 @@ const JournalPage = () => {
                 placeholder="Write your journal entry here..."
               />
             </div>
+
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="screenshots" className="text-right pt-2">
+                Screenshots
+              </Label>
+              <div className="col-span-3 space-y-4">
+                <div className="flex flex-col">
+                  <div className="text-sm text-muted-foreground mb-2">
+                    Upload up to 2 screenshots. You can also paste screenshots from your clipboard.
+                  </div>
+                  
+                  {/* Screenshot Upload Button */}
+                  <div className="flex items-center gap-4">
+                    <label
+                      htmlFor="screenshot-upload-edit"
+                      className={cn(
+                        "flex h-9 items-center justify-center rounded-md border border-input bg-background px-3",
+                        "text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground",
+                        "cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2",
+                        "focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50",
+                        "disabled:pointer-events-none"
+                      )}
+                    >
+                      <UploadCloud className="mr-2 h-4 w-4" />
+                      Choose File
+                    </label>
+                    <input
+                      id="screenshot-upload-edit"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      or paste from clipboard (Ctrl/Cmd+V)
+                    </span>
+                  </div>
+                  
+                  {/* Already uploaded screenshots */}
+                  {existingScreenshots.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">Existing Screenshots</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {existingScreenshots.map((src, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={src}
+                              alt={`Existing Screenshot ${index + 1}`}
+                              className="w-24 h-24 object-cover rounded border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeExistingScreenshot(index)}
+                              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => viewImage(src)}
+                              className="absolute bottom-1 right-1 bg-background text-foreground rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ImageIcon className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Preview of newly selected files */}
+                  {files.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">New Screenshots</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {files.map((file, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`New Screenshot ${index + 1}`}
+                              className="w-24 h-24 object-cover rounded border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeFile(index)}
+                              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setEditingEntry(null)}>
@@ -693,9 +856,9 @@ const JournalPage = () => {
             <Button 
               type="submit" 
               onClick={handleUpdateEntry}
-              disabled={!journalContent.trim() || updateMutation.isPending}
+              disabled={!journalContent.trim() || isSubmitting}
             >
-              {updateMutation.isPending ? 'Saving...' : 'Update Entry'}
+              {isSubmitting ? 'Saving...' : 'Update Entry'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -721,6 +884,17 @@ const JournalPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Image Viewer for full screen preview */}
+      {imageViewerOpen && currentImage && (
+        <ImageViewer
+          imageSrc={currentImage}
+          onClose={() => {
+            setImageViewerOpen(false);
+            setCurrentImage(null);
+          }}
+        />
+      )}
     </div>
   );
 };
