@@ -70,9 +70,12 @@ const JournalPage = () => {
     enabled: !!formattedDate,
   });
 
+  // Get current user ID
+  const userId = localStorage.getItem('userId') || '0';
+
   // Query for trades on selected date
   const { data: allTrades = [] } = useQuery({
-    queryKey: ['/api/trades'],
+    queryKey: [`/api/trades?userId=${userId}`],
     queryFn: getQueryFn<Trade[]>({ on401: 'returnNull' }),
   });
 

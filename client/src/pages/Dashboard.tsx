@@ -30,28 +30,17 @@ const Dashboard: React.FC = () => {
   const [isViewTradeModalOpen, setIsViewTradeModalOpen] = useState(false);
   const [selectedTrade, setSelectedTrade] = useState<Trade | undefined>(undefined);
   
+  // Get current user ID
+  const userId = localStorage.getItem('userId') || '0';
+  
   // Fetch trades
   const { data: trades = [], isLoading: isLoadingTrades } = useQuery<Trade[]>({
-    queryKey: ['/api/trades'],
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Error loading trades",
-        description: error instanceof Error ? error.message : "An error occurred"
-      });
-    }
+    queryKey: [`/api/trades?userId=${userId}`]
   });
 
   // Fetch instruments
   const { data: instruments = [], isLoading: isLoadingInstruments } = useQuery({
-    queryKey: ['/api/instruments'],
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Error loading instruments",
-        description: error instanceof Error ? error.message : "An error occurred"
-      });
-    }
+    queryKey: ['/api/instruments']
   });
 
   // Calculate performance metrics

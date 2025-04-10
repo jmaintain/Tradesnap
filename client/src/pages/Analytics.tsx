@@ -37,9 +37,12 @@ const Analytics: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("timeline");
   const [showDetailedCharts, setShowDetailedCharts] = useState<boolean>(false);
   
+  // Get current user ID
+  const userId = localStorage.getItem('userId') || '0';
+  
   // Fetch all trades
   const { data: trades = [], isLoading } = useQuery<Trade[]>({
-    queryKey: ['/api/trades']
+    queryKey: [`/api/trades?userId=${userId}`]
   });
 
   // Generate data for P&L by Instrument
