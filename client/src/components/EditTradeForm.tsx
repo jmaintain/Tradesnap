@@ -36,7 +36,8 @@ import {
 } from '@/components/ui/accordion';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { BookOpen, UploadCloud, X } from 'lucide-react';
+import { BookOpen, UploadCloud, X, Maximize2 } from 'lucide-react';
+import ImageViewer from './ImageViewer';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 
