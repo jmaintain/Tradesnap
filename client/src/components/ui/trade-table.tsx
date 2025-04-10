@@ -83,6 +83,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                 </TableHead>
               )}
               <TableHead className="whitespace-nowrap">Date</TableHead>
+              <TableHead className="whitespace-nowrap">Time</TableHead>
               <TableHead className="whitespace-nowrap">Symbol</TableHead>
               <TableHead className="whitespace-nowrap">Type</TableHead>
               <TableHead className="whitespace-nowrap">Quantity</TableHead>
@@ -113,6 +114,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
                   )}
                   <TableCell className="whitespace-nowrap">
                     {getDateKey(trade.date)}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {trade.entryTime || '-'}
                   </TableCell>
                   <TableCell className="font-medium whitespace-nowrap">
                     {trade.symbol}
@@ -180,7 +184,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
                       {trade.tradeType === 'long' ? 'Long' : 'Short'}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-500">{getDateKey(trade.date)}</div>
+                  <div className="text-sm text-gray-500">
+                    {getDateKey(trade.date)} {trade.entryTime ? `at ${trade.entryTime}` : ''}
+                  </div>
                 </div>
                 <div className={`text-xl font-bold ${profitLossClass}`}>
                   {isProfitable ? '+' : ''}${Math.abs(parseFloat(trade.pnlDollars || '0')).toFixed(2)}
