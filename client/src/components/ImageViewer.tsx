@@ -83,6 +83,10 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ imageSrc, onClose }) =
     <div 
       className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center" 
       onClick={(e) => {
+        // Stop propagation to prevent clicks inside the viewer from reaching elements underneath
+        e.stopPropagation();
+        
+        // Only close if the background (not the image or controls) is clicked
         if (e.target === e.currentTarget) {
           onClose();
         }
@@ -90,7 +94,10 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ imageSrc, onClose }) =
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      <div className="relative max-w-full max-h-full p-4">
+      <div 
+        className="relative max-w-full max-h-full p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Control buttons */}
         <div className="absolute top-4 right-4 flex space-x-2 z-10">
           <button 
@@ -138,10 +145,22 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ imageSrc, onClose }) =
         {/* Image container with transform */}
         <div 
           className="overflow-hidden cursor-move" 
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onWheel={handleWheel}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            handleMouseDown(e);
+          }}
+          onMouseMove={(e) => {
+            e.stopPropagation();
+            handleMouseMove(e);
+          }}
+          onMouseUp={(e) => {
+            e.stopPropagation();
+            handleMouseUp();
+          }}
+          onWheel={(e) => {
+            e.stopPropagation();
+            handleWheel(e);
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           <img 
@@ -153,11 +172,15 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ imageSrc, onClose }) =
               transformOrigin: 'center',
               cursor: isDragging ? 'grabbing' : (scale > 1 ? 'grab' : 'default')
             }}
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
         
         {/* Zoom indicator */}
-        <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+        <div 
+          className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm"
+          onClick={(e) => e.stopPropagation()}
+        >
           {Math.round(scale * 100)}%
         </div>
       </div>
