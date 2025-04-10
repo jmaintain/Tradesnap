@@ -181,6 +181,7 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
   const [journalContent, setJournalContent] = useState("");
   const [journalMood, setJournalMood] = useState("neutral");
   const [existingJournalEntry, setExistingJournalEntry] = useState<JournalEntry | null>(null);
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
   // Fetch instruments for the dropdown
   const { data: instruments = [] } = useQuery({
@@ -371,6 +372,15 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
 
   const handleRemoveExistingScreenshot = (index: number) => {
     setExistingScreenshots(prev => prev.filter((_, i) => i !== index));
+  };
+  
+  // Image viewer handlers
+  const handleViewImage = (imageSrc: string) => {
+    setEnlargedImage(imageSrc);
+  };
+  
+  const handleCloseEnlargedImage = () => {
+    setEnlargedImage(null);
   };
   
   // Effect to load journal entries when the date changes
@@ -604,418 +614,440 @@ const EditTradeForm: React.FC<EditTradeFormProps> = ({
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={handleFormSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="symbol"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Symbol</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Array.isArray(instruments) && instruments.map((instrument: {symbol: string, description: string}) => (
-                      <SelectItem key={instrument.symbol} value={instrument.symbol}>
-                        {instrument.symbol} - {instrument.description}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="tradeType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Type</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="long">Long</SelectItem>
-                    <SelectItem value="short">Short</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="quantity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Quantity</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    min="1" 
-                    {...field} 
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Date</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="date" 
-                    {...field} 
-                    value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''}
-                    onChange={(e) => {
-                      const normalizedDate = normalizeDate(e.target.value);
-                      console.log('Date selected:', e.target.value);
-                      console.log('Normalized date:', normalizedDate);
-                      field.onChange(normalizedDate);
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="entryPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Entry Price</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="entryTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Entry Time (Optional)</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="exitPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className={isOngoing ? "" : "after:content-['*'] after:ml-0.5 after:text-red-500"}>
-                  Exit Price {isOngoing && "(Optional for ongoing trades)"}
-                </FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    {...field} 
-                    disabled={isOngoing}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="stopLossPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Stop Loss Price</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    {...field} 
-                    placeholder="Enter stop loss price" 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="isOngoing"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                <FormControl>
-                  <Checkbox 
-                    checked={field.value}
-                    onCheckedChange={(checked) => {
-                      // Update the form field
-                      field.onChange(checked);
-                      // Also update our state for UI changes
-                      setIsOngoing(!!checked);
-                      
-                      // If checked, clear exit price, if unchecked, reset it
-                      if (checked) {
-                        form.setValue('exitPrice', '');
-                      }
-                    }}
-                  />
-                </FormControl>
-                <FormLabel className="text-sm font-medium leading-none cursor-pointer">
-                  This is an ongoing/active trade (no exit price yet)
-                </FormLabel>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Display calculated risk/reward ratio if we have the necessary values */}
-          {!isOngoing && form.watch('entryPrice') && form.watch('exitPrice') && form.watch('stopLossPrice') && (
-            <div className="flex items-center justify-end space-x-2">
-              <span className="text-sm font-medium">Risk/Reward Ratio:</span>
-              <span className="text-sm font-bold">
-                {calculateRiskRewardDisplay()}
-              </span>
-            </div>
-          )}
-        </div>
-        
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Add notes about your trade here..." 
-                  className="resize-none"
-                  value={field.value || ''}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  name={field.name}
-                  ref={field.ref}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div>
-          <FormLabel className="block mb-2">Screenshots (Max 2)</FormLabel>
-          
-          {/* Existing Screenshots */}
-          {existingScreenshots.length > 0 && (
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Existing Screenshots:</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {existingScreenshots.map((screenshot, index) => {
-                  const imageSrc = screenshot.startsWith('data:') 
-                    ? screenshot 
-                    : screenshot.startsWith('/uploads/') 
-                      ? screenshot.substring(1) // Remove leading slash
-                      : `/uploads/${screenshot}`;
-                  
-                  return (
-                    <div key={index} className="relative border rounded-lg overflow-hidden group">
-                      <img 
-                        src={imageSrc} 
-                        alt={`Existing screenshot ${index + 1}`} 
-                        className="w-full h-auto object-contain"
-                      />
-                      <Button 
-                        type="button"
-                        size="sm" 
-                        variant="destructive" 
-                        className="absolute top-2 right-2 opacity-70 hover:opacity-100"
-                        onClick={() => handleRemoveExistingScreenshot(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          
-          {/* New Screenshots Upload */}
-          {existingScreenshots.length < 2 && (
-            <div className="mt-3 flex justify-center px-4 sm:px-6 pt-4 pb-4 sm:pt-5 sm:pb-6 border-2 border-gray-300 border-dashed rounded-md">
-              <div className="space-y-1 text-center">
-                <UploadCloud className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
-                <div className="flex flex-col text-sm text-gray-600">
-                  <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                    <span>Upload files</span>
-                    <input
-                      id="file-upload"
-                      name="file-upload"
-                      type="file"
-                      className="sr-only"
-                      multiple
-                      accept="image/*"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                  <p className="pl-1 text-xs sm:text-sm">or drag and drop</p>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  PNG, JPG, GIF up to 10MB ({2 - existingScreenshots.length} slots available)
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  <span className="font-semibold">Pro Tip:</span> You can paste screenshots directly (Ctrl+V / ⌘+V)
-                </p>
-                {files.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500">Selected files to add:</p>
-                    <ul className="pl-5 text-xs text-gray-500">
-                      {files.map((file, index) => (
-                        <li key={index} className="flex items-center justify-between mb-1">
-                          <span className="truncate">{file.name}</span>
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              setFiles(files.filter((_, i) => i !== index));
-                            }}
-                            className="ml-2 text-red-500 hover:text-red-700 text-xs"
-                          >
-                            ✕
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <Accordion type="single" collapsible className="mt-4">
-          <AccordionItem value="journal">
-            <AccordionTrigger>
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                <span>Add Journal Entry</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="include-journal" 
-                    checked={includeJournal}
-                    onCheckedChange={() => setIncludeJournal(!includeJournal)}
-                  />
-                  <label
-                    htmlFor="include-journal"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+    <>
+      <Form {...form}>
+        <form onSubmit={handleFormSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="symbol"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Symbol</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
                   >
-                    Include journal entry with this trade
-                  </label>
-                </div>
-                
-                {includeJournal && (
-                  <>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="mood" className="text-right">
-                        Mood
-                      </Label>
-                      <Select value={journalMood} onValueChange={setJournalMood}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select your mood" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="great">Great</SelectItem>
-                          <SelectItem value="good">Good</SelectItem>
-                          <SelectItem value="neutral">Neutral</SelectItem>
-                          <SelectItem value="bad">Bad</SelectItem>
-                          <SelectItem value="terrible">Terrible</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-start gap-4">
-                      <Label htmlFor="journal-content" className="text-right pt-2">
-                        Journal
-                      </Label>
-                      <Textarea
-                        id="journal-content"
-                        value={journalContent}
-                        onChange={(e) => setJournalContent(e.target.value)}
-                        className="col-span-3"
-                        rows={4}
-                        placeholder="Write your journal entry here..."
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-
-        <div className="sticky bottom-0 pt-3 mt-4 border-t border-gray-200 bg-white">
-          <div className="flex justify-end gap-3 p-2 sm:p-0 sm:py-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={isSubmitting}
-              className="text-xs sm:text-sm px-3 sm:px-4 h-9"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="text-xs sm:text-sm px-3 sm:px-4 h-9"
-            >
-              {isSubmitting ? 'Saving...' : 'Update Trade'}
-            </Button>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Array.isArray(instruments) && instruments.map((instrument: {symbol: string, description: string}) => (
+                        <SelectItem key={instrument.symbol} value={instrument.symbol}>
+                          {instrument.symbol} - {instrument.description}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="tradeType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Type</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="long">Long</SelectItem>
+                      <SelectItem value="short">Short</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
-        </div>
-      </form>
-    </Form>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Quantity</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="1" 
+                      {...field} 
+                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Date</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="date" 
+                      {...field} 
+                      value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''}
+                      onChange={(e) => {
+                        const normalizedDate = normalizeDate(e.target.value);
+                        console.log('Date selected:', e.target.value);
+                        console.log('Normalized date:', normalizedDate);
+                        field.onChange(normalizedDate);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="entryPrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">Entry Price</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="entryTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Entry Time (Optional)</FormLabel>
+                  <FormControl>
+                    <Input type="time" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="exitPrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={isOngoing ? "" : "after:content-['*'] after:ml-0.5 after:text-red-500"}>
+                    Exit Price {isOngoing && "(Optional for ongoing trades)"}
+                  </FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      {...field} 
+                      disabled={isOngoing}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="stopLossPrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Stop Loss Price</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      {...field} 
+                      placeholder="Enter stop loss price" 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="isOngoing"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox 
+                      checked={field.value}
+                      onCheckedChange={(checked) => {
+                        // Update the form field
+                        field.onChange(checked);
+                        // Also update our state for UI changes
+                        setIsOngoing(!!checked);
+                        
+                        // If checked, clear exit price, if unchecked, reset it
+                        if (checked) {
+                          form.setValue('exitPrice', '');
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormLabel className="text-sm font-medium leading-none cursor-pointer">
+                    This is an ongoing/active trade (no exit price yet)
+                  </FormLabel>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Display calculated risk/reward ratio if we have the necessary values */}
+            {!isOngoing && form.watch('entryPrice') && form.watch('exitPrice') && form.watch('stopLossPrice') && (
+              <div className="flex items-center justify-end space-x-2">
+                <span className="text-sm font-medium">Risk/Reward Ratio:</span>
+                <span className="text-sm font-bold">
+                  {calculateRiskRewardDisplay()}
+                </span>
+              </div>
+            )}
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Add notes about your trade here..." 
+                    className="resize-none"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div>
+            <FormLabel className="block mb-2">Screenshots (Max 2)</FormLabel>
+            
+            {/* Existing Screenshots */}
+            {existingScreenshots.length > 0 && (
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">Existing Screenshots:</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {existingScreenshots.map((screenshot, index) => {
+                    const imageSrc = screenshot.startsWith('data:') 
+                      ? screenshot 
+                      : screenshot.startsWith('/uploads/') 
+                        ? screenshot.substring(1) // Remove leading slash
+                        : `/uploads/${screenshot}`;
+                    
+                    return (
+                      <div key={index} className="relative border rounded-lg overflow-hidden group">
+                        <img 
+                          src={imageSrc} 
+                          alt={`Existing screenshot ${index + 1}`} 
+                          className="w-full h-auto object-contain cursor-pointer"
+                          onClick={() => handleViewImage(imageSrc)}
+                        />
+                        <div className="absolute top-2 right-2 flex space-x-1">
+                          <Button 
+                            type="button"
+                            size="sm" 
+                            variant="secondary" 
+                            className="opacity-70 hover:opacity-100"
+                            onClick={() => handleViewImage(imageSrc)}
+                          >
+                            <Maximize2 className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            type="button"
+                            size="sm" 
+                            variant="destructive" 
+                            className="opacity-70 hover:opacity-100"
+                            onClick={() => handleRemoveExistingScreenshot(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {/* New Screenshots Upload */}
+            {existingScreenshots.length < 2 && (
+              <div className="mt-3 flex justify-center px-4 sm:px-6 pt-4 pb-4 sm:pt-5 sm:pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                <div className="space-y-1 text-center">
+                  <UploadCloud className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
+                  <div className="flex flex-col text-sm text-gray-600">
+                    <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                      <span>Upload files</span>
+                      <input
+                        id="file-upload"
+                        name="file-upload"
+                        type="file"
+                        className="sr-only"
+                        multiple
+                        accept="image/*"
+                        onChange={handleFileChange}
+                      />
+                    </label>
+                    <p className="pl-1 text-xs sm:text-sm">or drag and drop</p>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    PNG, JPG, GIF up to 10MB ({2 - existingScreenshots.length} slots available)
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    <span className="font-semibold">Pro Tip:</span> You can paste screenshots directly (Ctrl+V / ⌘+V)
+                  </p>
+                  {files.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">Selected files to add:</p>
+                      <ul className="pl-5 text-xs text-gray-500">
+                        {files.map((file, index) => (
+                          <li key={index} className="flex items-center justify-between mb-1">
+                            <span className="truncate">{file.name}</span>
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setFiles(files.filter((_, i) => i !== index));
+                              }}
+                              className="ml-2 text-red-500 hover:text-red-700 text-xs"
+                            >
+                              ✕
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <Accordion type="single" collapsible className="mt-4">
+            <AccordionItem value="journal">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  <span>Add Journal Entry</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="include-journal" 
+                      checked={includeJournal}
+                      onCheckedChange={() => setIncludeJournal(!includeJournal)}
+                    />
+                    <label
+                      htmlFor="include-journal"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Include journal entry with this trade
+                    </label>
+                  </div>
+                  
+                  {includeJournal && (
+                    <>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="mood" className="text-right">
+                          Mood
+                        </Label>
+                        <Select value={journalMood} onValueChange={setJournalMood}>
+                          <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Select your mood" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="great">Great</SelectItem>
+                            <SelectItem value="good">Good</SelectItem>
+                            <SelectItem value="neutral">Neutral</SelectItem>
+                            <SelectItem value="bad">Bad</SelectItem>
+                            <SelectItem value="terrible">Terrible</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="journal-content" className="text-right pt-2">
+                          Journal
+                        </Label>
+                        <Textarea
+                          id="journal-content"
+                          value={journalContent}
+                          onChange={(e) => setJournalContent(e.target.value)}
+                          className="col-span-3"
+                          rows={4}
+                          placeholder="Write your journal entry here..."
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          <div className="sticky bottom-0 pt-3 mt-4 border-t border-gray-200 bg-white">
+            <div className="flex justify-end gap-3 p-2 sm:p-0 sm:py-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={isSubmitting}
+                className="text-xs sm:text-sm px-3 sm:px-4 h-9"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="text-xs sm:text-sm px-3 sm:px-4 h-9"
+              >
+                {isSubmitting ? 'Saving...' : 'Update Trade'}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </Form>
+      
+      {/* Image Viewer */}
+      {enlargedImage && (
+        <ImageViewer 
+          imageSrc={enlargedImage} 
+          onClose={handleCloseEnlargedImage} 
+        />
+      )}
+    </>
   );
 };
 
