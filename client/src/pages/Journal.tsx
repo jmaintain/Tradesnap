@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { CalendarIcon, Edit, PenLine, Trash2, BookOpen, Calendar as CalendarIcon2 } from 'lucide-react';
+import { CalendarIcon, Edit, PenLine, Trash2, BookOpen, Calendar as CalendarIcon2, UploadCloud, X, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getQueryFn } from '@/lib/queryClient';
 import { apiRequestAdapter } from '@/lib/apiAdapter';
@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Trade } from '@shared/schema';
 import { DayProps } from 'react-day-picker';
 import { getDateKey } from '@/lib/date-utils';
+import { processImageFile } from '@/lib/imageProcessing';
 
 interface JournalEntry {
   id: number;
@@ -26,6 +27,7 @@ interface JournalEntry {
   date: string;
   content: string;
   mood: string;
+  screenshots?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -42,6 +44,11 @@ const JournalPage = () => {
   const [mood, setMood] = useState('neutral');
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [deleteEntryId, setDeleteEntryId] = useState<number | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [existingScreenshots, setExistingScreenshots] = useState<string[]>([]);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -81,19 +88,45 @@ const JournalPage = () => {
   // Create a new journal entry
   const createMutation = useMutation({
     mutationFn: async (data: { content: string; date: string; mood: string }) => {
-      return apiRequestAdapter<JournalEntry>('/api/journal', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      setIsSubmitting(true);
+      
+      try {
+        // If we have screenshots, we need to use FormData instead of JSON
+        if (files.length > 0) {
+          const formData = new FormData();
+          formData.append('content', data.content);
+          formData.append('date', data.date);
+          formData.append('mood', data.mood);
+          
+          // Add screenshots
+          files.forEach(file => {
+            formData.append('screenshots', file);
+          });
+          
+          return apiRequestAdapter<JournalEntry>('/api/journal', {
+            method: 'POST',
+            body: formData,
+          });
+        } else {
+          // Otherwise use JSON
+          return apiRequestAdapter<JournalEntry>('/api/journal', {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/journal/date', formattedDate] });
       setShowNewEntryDialog(false);
       setJournalContent('');
       setMood('neutral');
+      setFiles([]);
       toast({
         title: 'Success',
         description: 'Journal entry created successfully',
@@ -111,17 +144,52 @@ const JournalPage = () => {
   // Update an existing journal entry
   const updateMutation = useMutation({
     mutationFn: async (data: { id: number; content: string; mood: string }) => {
-      return apiRequestAdapter<JournalEntry>(`/api/journal/${data.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ content: data.content, mood: data.mood }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      setIsSubmitting(true);
+      
+      try {
+        // Check if we have any new files or removed existing screenshots
+        if (files.length > 0 || existingScreenshots.length < (editingEntry?.screenshots?.length || 0)) {
+          const formData = new FormData();
+          formData.append('content', data.content);
+          formData.append('mood', data.mood);
+          
+          // Add any remaining existing screenshots
+          existingScreenshots.forEach((src, index) => {
+            formData.append('existingScreenshots', src);
+          });
+          
+          // Add any new screenshots
+          files.forEach(file => {
+            formData.append('screenshots', file);
+          });
+          
+          return apiRequestAdapter<JournalEntry>(`/api/journal/${data.id}`, {
+            method: 'PUT',
+            body: formData,
+          });
+        } else {
+          // If no screenshot changes, use JSON
+          return apiRequestAdapter<JournalEntry>(`/api/journal/${data.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ 
+              content: data.content, 
+              mood: data.mood,
+              screenshots: existingScreenshots
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/journal/date', formattedDate] });
       setEditingEntry(null);
+      setFiles([]);
+      setExistingScreenshots([]);
       toast({
         title: 'Success',
         description: 'Journal entry updated successfully',
@@ -225,10 +293,111 @@ const JournalPage = () => {
     }
   };
 
+  // Handle file upload for screenshots
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files;
+    if (!selectedFiles) return;
+
+    // Only allow up to 2 screenshots total (existing + new)
+    const totalCount = existingScreenshots.length + files.length;
+    const remainingSlots = 2 - totalCount;
+    
+    if (remainingSlots <= 0) {
+      toast({
+        title: "Error",
+        description: "Maximum of 2 screenshots allowed",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Only add as many files as we have slots for
+    const newFiles = Array.from(selectedFiles).slice(0, remainingSlots);
+    setFiles(prev => [...prev, ...newFiles]);
+  };
+
+  // Handle clipboard paste for screenshots
+  const handlePaste = useCallback(async (e: ClipboardEvent) => {
+    e.preventDefault();
+    
+    // Check if we already have 2 screenshots
+    const totalCount = existingScreenshots.length + files.length;
+    if (totalCount >= 2) {
+      toast({
+        title: "Error",
+        description: "Maximum of 2 screenshots allowed",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Get the clipboard items
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    
+    // Check for images
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          // Process the image before adding it (compress it)
+          try {
+            const processedFile = await processImageFile(file);
+            setFiles(prev => [...prev, processedFile]);
+            
+            // Show success toast
+            toast({
+              title: "Success",
+              description: "Screenshot added from clipboard",
+            });
+            
+            // Only process the first image found
+            break;
+          } catch (error) {
+            toast({
+              title: "Error",
+              description: "Failed to process clipboard image",
+              variant: "destructive",
+            });
+          }
+        }
+      }
+    }
+  }, [files.length, existingScreenshots.length, toast]);
+
+  // Remove a file from the list
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Remove an existing screenshot
+  const removeExistingScreenshot = (index: number) => {
+    setExistingScreenshots(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // View image in full screen
+  const viewImage = (src: string) => {
+    setCurrentImage(src);
+    setImageViewerOpen(true);
+  };
+
+  // Set up paste event listener
+  useEffect(() => {
+    // Only add the event listener when the dialog is open
+    if (showNewEntryDialog || editingEntry) {
+      window.addEventListener('paste', handlePaste);
+      return () => {
+        window.removeEventListener('paste', handlePaste);
+      };
+    }
+  }, [showNewEntryDialog, editingEntry, handlePaste]);
+
   const openEditDialog = (entry: JournalEntry) => {
     setEditingEntry(entry);
     setJournalContent(entry.content);
     setMood(entry.mood);
+    setExistingScreenshots(entry.screenshots || []);
+    setFiles([]);
   };
 
   const confirmDelete = (id: number) => {
@@ -337,6 +506,23 @@ const JournalPage = () => {
                           </CardHeader>
                           <CardContent>
                             <div className="whitespace-pre-wrap">{entry.content}</div>
+                            
+                            {entry.screenshots && entry.screenshots.length > 0 && (
+                              <div className="mt-4">
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {entry.screenshots.map((src, index) => (
+                                    <div key={index} className="relative group">
+                                      <img 
+                                        src={src} 
+                                        alt={`Journal screenshot ${index + 1}`} 
+                                        className="w-24 h-24 object-cover rounded border cursor-pointer" 
+                                        onClick={() => viewImage(src)}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       ))
